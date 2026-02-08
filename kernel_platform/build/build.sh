@@ -822,6 +822,12 @@ if [ "${SKIP_DEFCONFIG}" != "1" ] ; then
   fi
 fi
 
+    # Custom Defconfig
+    echo "========================================================"
+    echo " Merging custom defconfig with .config"
+    (cd ${OUT_DIR} && ${MERGE_CONFIG} -m .config ${ANDROID_BUILD_TOP}/custom_defconfigs/b4q_defconfig)
+    (cd ${OUT_DIR} && make O=${OUT_DIR} ${TOOL_ARGS} olddefconfig)
+
 if [ "${LTO}" = "none" -o "${LTO}" = "thin" -o "${LTO}" = "full" ]; then
   echo "========================================================"
   echo " Modifying LTO mode to '${LTO}'"
