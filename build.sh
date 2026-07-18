@@ -3,7 +3,7 @@ set -e
 
 # ===============================================================================================================
 #
-#                                Galaxy S22(Qualcomm) Series Kernel Compiling Script
+#                                Galaxy Z Flip4 Kernel Compiling Script
 #
 # ===============================================================================================================
 #
@@ -29,7 +29,7 @@ set -e
 #   5. Compiler put out Cooked boot.img or Flashable Odin tar file(include FastbootD patched recovery)
 #   6. Download file and Flash Cooked file in Odin or FastbootD (If you first, You have to Use Odin)
 #
-#                                 - Yoro1836 (Thank You for GoRhanHee and Ravindu)
+#                                 - xfwdrev (Thank You GoRhanHee, Yoro1836 and Ravindu)
 # ===============================================================================================================
 
 # -----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ function setup_env() {
     SCRIPT_DIR="$(dirname $(readlink -fq $0))"
 
     # OEM Setting
-    BUILD_TARGET=b0q_gbl_openx
+    BUILD_TARGET=b4q_eur_openx
     export MODEL=$(echo $BUILD_TARGET | cut -d'_' -f1)
     export PROJECT_NAME=${MODEL}
     export REGION=$(echo $BUILD_TARGET | cut -d'_' -f2)
@@ -61,9 +61,9 @@ function setup_env() {
     export TARGET_BOARD_PLATFORM=gki
     
     # KBUILD Setting
-    sudo timedatectl set-timezone "Asia/Seoul" || export TZ="Asia/Seoul"
-    export KBUILD_BUILD_USER="Yoro1836"
-    export KBUILD_BUILD_HOST="AkoTheCow"
+    sudo timedatectl set-timezone "Asia/Manila" || export TZ="Asia/Manila"
+    export KBUILD_BUILD_USER="xfwdrev"
+    export KBUILD_BUILD_HOST="localhost"
     export KBUILD_BUILD_TIMESTAMP=$(date)
 
     # Kernel Version Customization
@@ -80,11 +80,11 @@ function setup_env() {
     export MODNAME=audio_dlkm
 
     export KBUILD_EXT_MODULES="../vendor/qcom/opensource/datarmnet-ext/wlan \
-        ../vendor/qcom/opensource/datarmnet/core \
-        ../vendor/qcom/opensource/mmrm-driver \
-        ../vendor/qcom/opensource/audio-kernel \
-        ../vendor/qcom/opensource/camera-kernel \
-        ../vendor/qcom/opensource/display-drivers/msm"
+    ../vendor/qcom/opensource/datarmnet/core \
+    ../vendor/qcom/opensource/mmrm-driver \
+    ../vendor/qcom/opensource/audio-kernel \
+    ../vendor/qcom/opensource/camera-kernel \
+    ../vendor/qcom/opensource/display-drivers/msm"
 
     # CCACHE Setting
     if command -v ccache >/dev/null 2>&1; then
@@ -116,12 +116,12 @@ function prepare_toolchain() {
     # MKBOOTIMG Setting
     export MKBOOTIMG_EXTRA_ARGS="
         --os_version 12.0.0 \
-        --os_patch_level 2025-08-01 \
+        --os_patch_level 2026-04 \
         --pagesize 4096
     "
 
     # Import Samsung toolchain
-    local TOOLCHAIN_URL="https://github.com/yoro1836/samsung_sm8450_toolchain/releases/download/clang12/toolchain.tar.gz"
+    local TOOLCHAIN_URL="https://github.com/xfwdrev/samsung_prebuilts_toolchain/releases/download/toolchain/toolchain.tar.gz"
     local TOOLCHAIN_FILE=$(basename "$TOOLCHAIN_URL")
     local CHECK_DIR="kernel_platform/prebuilts"
 
@@ -163,29 +163,14 @@ function build_kernel() {
         # GKI Build for AnyKernel3
         # Uses direct build/build.sh call
         export GKI_KERNEL_BUILD_OPTIONS="${common_options} SKIP_VENDOR_BOOT=1"
-        # Handle Custom Defconfig Variants
-        if [ -z "${DEFCONFIG_VARIANT}" ]; then
-            export DEFCONFIG_VARIANT="perf"
-        fi
 
-        if [ -n "${DEFCONFIG_VARIANT}" ]; then
-            local variant_config="custom_defconfigs/zerox-${DEFCONFIG_VARIANT}_defconfig"
+            local variant_config="custom_defconfigs/b4q_defconfig"
             if [ -f "${variant_config}" ]; then
                 echo "Merging variant config: ${variant_config}"
                 export POST_DEFCONFIG_CMDS="check_defconfig && ${MERGE_CONFIG} -m \${OUT_DIR}/.config ${ANDROID_BUILD_TOP}/${variant_config}"
             else
                 echo "Warning: variant config '${variant_config}' not found!"
             fi
-        fi
-
-        # Source CI functions and setup KSU/Patches
-        if [ -f ".github/scripts/ci.sh" ]; then
-            source .github/scripts/ci.sh
-            # setup_ksu relies on KSU_VARIANT being set
-            setup_ksu
-        else
-            echo "Warning: .github/scripts/ci.sh not found, skipping patch application."
-        fi
         
         echo "Building Common Kernel..."
         #(
@@ -234,7 +219,7 @@ function package_ak3() {
 
     cp "$image_path" ./external/AnyKernel3/Image
     
-    zipname="ZeroX-5.10-$(date +%Y%m%d-%H%M%S)-$(git rev-parse --short HEAD)"
+    zipname="Chiclet-5.10-$(date +%Y%m%d-%H%M%S)-$(git rev-parse --short HEAD)"
 
     cd external/AnyKernel3
     zip -r ${zipname}.zip *
@@ -257,7 +242,7 @@ function package_tar() {
     cp "$dist_path/vendor_boot.img" ./vendor_boot.img
     cp "$dist_path/boot.img" ./boot.img
     
-    tar -cvf Galaxy_S22.tar boot.img vendor_boot.img
+    tar -cvf ChicletKernel_b4q.tar boot.img vendor_boot.img
     
     echo "Done! Build Complete."
 }
