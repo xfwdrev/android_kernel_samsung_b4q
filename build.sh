@@ -75,16 +75,20 @@ function setup_env() {
     export MERGE_CONFIG="${ANDROID_BUILD_TOP}/kernel_platform/common/scripts/kconfig/merge_config.sh"
 
     mkdir -p "${DIST_DIR}"
+    
+    if [ ! -d "${ANDROID_PRODUCT_OUT}" ]; then
+        mkdir -p "${ANDROID_PRODUCT_OUT}"
+    fi
 
     export KBUILD_EXTRA_SYMBOLS=${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/mmrm-driver/Module.symvers
     export MODNAME=audio_dlkm
 
     export KBUILD_EXT_MODULES="../vendor/qcom/opensource/datarmnet-ext/wlan \
-    ../vendor/qcom/opensource/datarmnet/core \
-    ../vendor/qcom/opensource/mmrm-driver \
-    ../vendor/qcom/opensource/audio-kernel \
-    ../vendor/qcom/opensource/camera-kernel \
-    ../vendor/qcom/opensource/display-drivers/msm"
+        ../vendor/qcom/opensource/datarmnet/core \
+        ../vendor/qcom/opensource/mmrm-driver \
+        ../vendor/qcom/opensource/audio-kernel \
+        ../vendor/qcom/opensource/camera-kernel \
+        ../vendor/qcom/opensource/display-drivers/msm"
 
     # CCACHE Setting
     if command -v ccache >/dev/null 2>&1; then
@@ -167,7 +171,7 @@ function build_kernel() {
             local variant_config="custom_defconfigs/b4q_defconfig"
             if [ -f "${variant_config}" ]; then
                 echo "Merging variant config: ${variant_config}"
-                export POST_DEFCONFIG_CMDS="check_defconfig && ${MERGE_CONFIG} -m \${OUT_DIR}/.config ${ANDROID_BUILD_TOP}/${variant_config}"
+                export POST_DEFCONFIG_CMDS="check_defconfig && ${MERGE_CONFIG} -m \${OUT_DIR}/gki_kernel/common/.config ${ANDROID_BUILD_TOP}/${variant_config}"
             else
                 echo "Warning: variant config '${variant_config}' not found!"
             fi
@@ -219,7 +223,7 @@ function package_ak3() {
 
     cp "$image_path" ./external/AnyKernel3/Image
     
-    zipname="Chiclet-5.10-$(date +%Y%m%d-%H%M%S)-$(git rev-parse --short HEAD)"
+    zipname="ChicletKernel-5.10-$(date +%Y%m%d-%H%M%S)-$(git rev-parse --short HEAD)"
 
     cd external/AnyKernel3
     zip -r ${zipname}.zip *
