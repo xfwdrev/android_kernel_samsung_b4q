@@ -1,0 +1,16 @@
+# Ignore build folders created
+device/
+out/
+zip/
+
+# Ignore ccache directory
+.ccache/
+
+# Ignore prebuilts
+kernel_platform/prebuilts/
+kernel_platform/prebuilts-master/
+
+# Ignore files not needed to be committed
+exports.txt
+kernel_platform/.config
+
