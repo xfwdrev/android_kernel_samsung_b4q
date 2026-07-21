@@ -141,6 +141,48 @@ function prepare_toolchain() {
     fi
 }
 
+function setup_ksun() {
+    local COMMON_DIR="${ANDROID_BUILD_TOP}/kernel_platform/common"
+    local KSUN_DIR="${COMMON_DIR}/KernelSU-Next"
+    local PATCH_FILE="${ANDROID_BUILD_TOP}/patches/0001-Enable-SuSFS-2.2.0-KSU-Next.patch"
+
+    echo "Checking KernelSU Next..."
+
+    if [ -d "${KSU_DIR}" ]; then
+        echo "KernelSU Next already installed, Skipping..."
+    else
+        echo "Installing KernelSU Next..."
+        (
+            cd "${COMMON_DIR}"
+            curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s dev
+        ) || {
+            echo "KernelSU Next setup failed!"
+            exit 1
+        }
+    fi
+
+    if [ ! -f "${PATCH_FILE}" ]; then
+        echo "Patch not found:"
+        echo "  ${PATCH_FILE}"
+        exit 1
+    fi
+
+    echo "Checking patch..."
+
+    if git -C "${KSUN_DIR}" apply --reverse --check "${PATCH_FILE}" >/dev/null 2>&1; then
+        echo "Patch already applied."
+    else
+        echo "Applying SuSFS patch..."
+        (
+            cd "${KSUN_DIR}"
+            git apply "${PATCH_FILE}"
+        ) || {
+            echo "Failed to apply patch!"
+            exit 1
+        }
+    fi
+}
+
 # -----------------------------------------------------------------------------
 # Build Functions
 # -----------------------------------------------------------------------------
@@ -296,12 +338,14 @@ case "$1" in
     ak3)
         setup_env
         prepare_toolchain
+        setup_ksun
         build_kernel "ak3"
         package_ak3
         ;;
     tar)
         setup_env
         prepare_toolchain
+        setup_ksun
         build_kernel "tar"
         package_tar
         ;;
