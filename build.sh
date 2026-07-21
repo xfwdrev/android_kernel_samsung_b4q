@@ -226,9 +226,14 @@ function package_ak3() {
     zipname="ChicletKernel-5.10-$(date +%Y%m%d-%H%M%S)-$(git rev-parse --short HEAD)"
 
     cd external/AnyKernel3
-    zip -r ${zipname}.zip *
+    zip -r9 ${zipname}.zip * -x ".git*" "README.md" "*placeholder"
     rm Image
-    mv ${zipname}.zip ../../
+
+    if [ ! -d "${ANDROID_BUILD_TOP}/zip" ]; then
+        mkdir -p "${ANDROID_BUILD_TOP}/zip"
+    fi
+
+    mv ${zipname}.zip "${ANDROID_BUILD_TOP}/zip"
     cd - > /dev/null
     
     echo "Done! Build Complete."
