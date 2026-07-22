@@ -1,7 +1,7 @@
-From ceade4c88d72f3760355c19b9ef63d3ced787d5d Mon Sep 17 00:00:00 2001
+From b607475a6c9c7a142716971bd1708b94f732c088 Mon Sep 17 00:00:00 2001
 From: xfwdrev <74693315+xfwdrev@users.noreply.github.com>
-Date: Mon, 20 Jul 2026 09:24:11 +0800
-Subject: [PATCH] Enable SuSFS 2.2.0 KSU Next
+Date: Tue, 21 Jul 2026 23:41:46 +0800
+Subject: [PATCH] Enable SuSFS 2.2.0 KSU-Next
 
 Signed-off-by: xfwdrev <74693315+xfwdrev@users.noreply.github.com>
 ---
@@ -19,7 +19,6 @@ Signed-off-by: xfwdrev <74693315+xfwdrev@users.noreply.github.com>
  kernel/hook/setuid_hook.h          |   3 -
  kernel/hook/syscall_event_bridge.c |  24 +-
  kernel/include/ksu.h               |   1 -
- kernel/kernel                      |   1 +
  kernel/policy/allowlist.c          |   9 +-
  kernel/policy/app_profile.c        |  23 +-
  kernel/policy/app_profile.h        |   2 +-
@@ -35,8 +34,7 @@ Signed-off-by: xfwdrev <74693315+xfwdrev@users.noreply.github.com>
  kernel/supercall/dispatch.c        | 331 ++++++++++++++++++-----
  kernel/supercall/supercall.c       | 156 +----------
  kernel/supercall/supercall.h       |   1 +
- 30 files changed, 996 insertions(+), 1186 deletions(-)
- create mode 120000 kernel/kernel
+ 29 files changed, 995 insertions(+), 1186 deletions(-)
 
 diff --git a/kernel/Kbuild b/kernel/Kbuild
 index cec135d1..4cdef512 100644
@@ -1801,14 +1799,6 @@ index 41e69ca2..bd450cc7 100644
  extern bool allow_shell;
  extern struct selinux_policy *backup_sepolicy;
  extern bool ksu_no_custom_rc;
-diff --git a/kernel/kernel b/kernel/kernel
-new file mode 120000
-index 00000000..b32a3654
---- /dev/null
-+++ b/kernel/kernel
-@@ -0,0 +1 @@
-+../KernelSU-Next/kernel
-\ No newline at end of file
 diff --git a/kernel/policy/allowlist.c b/kernel/policy/allowlist.c
 index 6996e365..e07a8c36 100644
 --- a/kernel/policy/allowlist.c
