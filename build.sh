@@ -145,10 +145,11 @@ function setup_ksun() {
     local COMMON_DIR="${ANDROID_BUILD_TOP}/kernel_platform/common"
     local KSUN_DIR="${COMMON_DIR}/KernelSU-Next"
     local PATCH_FILE="${ANDROID_BUILD_TOP}/patches/0001-Enable-SuSFS-2.2.0-KSU-Next.patch"
+    local SUS_MARKER="config KSU_SUSFS"
 
     echo "Checking KernelSU Next..."
 
-    if [ -d "${KSU_DIR}" ]; then
+    if [ -d "${KSUN_DIR}" ]; then
         echo "KernelSU Next already installed, Skipping..."
     else
         echo "Installing KernelSU Next..."
@@ -169,18 +170,18 @@ function setup_ksun() {
 
     echo "Checking patch..."
 
-    if git -C "${KSUN_DIR}" apply --reverse --check "${PATCH_FILE}" >/dev/null 2>&1; then
-        echo "Patch already applied."
-    else
+    if grep -q "${SUS_MARKER}" "${KSUN_DIR}/kernel/Kconfig" 2>/dev/null; then
+
+        echo "SuSFS already enabled, Skipping patch."
+        return
+    fi
+
         echo "Applying SuSFS patch..."
-        (
-            cd "${KSUN_DIR}"
-            git apply "${PATCH_FILE}"
-        ) || {
+
+        patch -d "${KSUN_DIR}" -p1 < "${PATCH_FILE}" || {
             echo "Failed to apply patch!"
             exit 1
         }
-    fi
 }
 
 # -----------------------------------------------------------------------------
