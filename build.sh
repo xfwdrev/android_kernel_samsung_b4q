@@ -256,21 +256,36 @@ function build_kernel() {
 }
 
 function package_ak3() {
-    echo "Packaging for AnyKernel3..."
-    local image_path="./out/msm-${CHIPSET_NAME}-${CHIPSET_NAME}-${TARGET_PRODUCT}/dist/Image"
-    
-    if [ ! -f "$image_path" ]; then
-        echo "Error: Image not found at $image_path"
-        exit 1
+    echo "Cleanup old images"
+    if [ -f "${ANDROID_BUILD_TOP}/external/AnyKernel3/Image" ]; then
+        rm -f \
+            "${ANDROID_BUILD_TOP}/external/AnyKernel3/Image" \
+            "${ANDROID_BUILD_TOP}/external/AnyKernel3/vendor_boot.img" \
+            "${ANDROID_BUILD_TOP}/external/AnyKernel3/vendor_dlkm.img"
     fi
 
-    cp "$image_path" ./external/AnyKernel3/Image
+    echo "Copying kernel image binary"
+    cp ${ANDROID_BUILD_TOP}/out/msm-${CHIPSET_NAME}-${CHIPSET_NAME}-${TARGET_PRODUCT}/dist/Image ${ANDROID_BUILD_TOP}/external/AnyKernel3/Image
+
+    chmod -R +x prebuilts/
+
+    cp -a ${ANDROID_BUILD_TOP}/prebuilts/prebuilts/* ${ANDROID_BUILD_TOP}/out/msm-${CHIPSET_NAME}-${CHIPSET_NAME}-${TARGET_PRODUCT}/dist/
+
+    echo "Building vendor_boot.img"
+    SCRIPT_DIR="${SCRIPT_DIR}" "${SCRIPT_DIR}/prebuilts/build_vendor_boot.sh" || exit 1
+
+    echo "Building vendor_dlkm.img"
+    SCRIPT_DIR="${SCRIPT_DIR}" "${SCRIPT_DIR}/prebuilts/build_vendor_dlkm.sh" || exit 1
+
+    echo "Packing images with AnyKernel3"
+    version=$(grep -o 'CONFIG_LOCALVERSION="[^"]*"' custom_defconfigs/b4q_defconfig | cut -d '"' -f 2)
+    version=${version:1}
+    DATE=`date +"%d-%m-%Y_%H-%M-%S"`
     
-    zipname="ChicletKernel-5.10-$(date +%Y%m%d-%H%M%S)-$(git rev-parse --short HEAD)"
+    zipname="${version}_${DATE}-$(git rev-parse --short HEAD)"
 
     cd external/AnyKernel3
     zip -r9 ${zipname}.zip * -x ".git*" "README.md" "*placeholder"
-    rm Image
 
     if [ ! -d "${ANDROID_BUILD_TOP}/zip" ]; then
         mkdir -p "${ANDROID_BUILD_TOP}/zip"
