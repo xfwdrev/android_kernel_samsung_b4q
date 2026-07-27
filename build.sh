@@ -46,6 +46,16 @@ function setup_env() {
     # DIR Setting
     SCRIPT_DIR="$(dirname $(readlink -fq $0))"
 
+    VERSION_FILE="${SCRIPT_DIR}/.build_incremental"
+
+    if [[ -f "${VERSION_FILE}" ]]; then
+        BUILD_VERSION=$(( $(cat "${VERSION_FILE}") + 1 ))
+    else
+        BUILD_VERSION=1
+    fi
+
+    echo "${BUILD_VERSION}" > "${VERSION_FILE}"
+
     # OEM Setting
     BUILD_TARGET=b4q_eur_openx
     export MODEL=$(echo $BUILD_TARGET | cut -d'_' -f1)
@@ -65,6 +75,7 @@ function setup_env() {
     export KBUILD_BUILD_USER="xfwdrev"
     export KBUILD_BUILD_HOST="localhost"
     export KBUILD_BUILD_TIMESTAMP=$(date)
+    export KBUILD_BUILD_VERSION="${BUILD_VERSION}"
 
     # Kernel Version Customization
     export LOCALVERSION="$VERSION_SUFFIX"
@@ -282,7 +293,7 @@ function package_ak3() {
     version=${version:1}
     DATE=`date +"%d-%m-%Y_%H-%M-%S"`
     
-    zipname="${version}_${DATE}-$(git rev-parse --short HEAD)"
+    zipname="${version}_${DATE}-$(git rev-parse --short=8 HEAD)"
 
     cd external/AnyKernel3
     zip -r9 ${zipname}.zip * -x ".git*" "README.md" "*placeholder"
