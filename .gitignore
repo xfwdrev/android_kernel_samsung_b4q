@@ -13,4 +13,4 @@ kernel_platform/prebuilts-master/
 # Ignore files not needed to be committed
 exports.txt
 kernel_platform/.config
-
+.build_incremental
