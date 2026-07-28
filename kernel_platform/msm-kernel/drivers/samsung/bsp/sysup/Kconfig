@@ -1,5 +1,0 @@
-config SEC_SYSUP
-	tristate "Samsung System Update"
-	default n
-	help
-	  Samsung system update Feature.
