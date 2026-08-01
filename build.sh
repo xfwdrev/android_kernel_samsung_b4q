@@ -154,24 +154,9 @@ function prepare_toolchain() {
 
 function setup_ksun() {
     local COMMON_DIR="${ANDROID_BUILD_TOP}/kernel_platform/common"
-    local KSUN_DIR="${COMMON_DIR}/KernelSU-Next"
+    local KSUN_DIR="${COMMON_DIR}/drivers/kernelsu"
     local PATCH_FILE="${ANDROID_BUILD_TOP}/patches/0001-Enable-SuSFS-2.2.0-KSU-Next.patch"
     local SUS_MARKER="config KSU_SUSFS"
-
-    echo "Checking KernelSU Next..."
-
-    if [ -d "${KSUN_DIR}" ]; then
-        echo "KernelSU Next already installed, Skipping..."
-    else
-        echo "Installing KernelSU Next..."
-        (
-            cd "${COMMON_DIR}"
-            curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s dev
-        ) || {
-            echo "KernelSU Next setup failed!"
-            exit 1
-        }
-    fi
 
     if [ ! -f "${PATCH_FILE}" ]; then
         echo "Patch not found:"
