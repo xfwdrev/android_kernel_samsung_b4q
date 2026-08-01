@@ -32,7 +32,7 @@ replace_config_value() {
 
 # 01. unpack stock vendor_dlkm.img
 unpack_vendor_dlkm() {
-    if [! -d "${AIT_DIR}/EXTRACTED_IMAGES/extracted_vendor_dlkm" ]; then
+    if [ ! -d "${AIT_DIR}/EXTRACTED_IMAGES/extracted_vendor_dlkm" ]; then
         replace_config_value "${AIT_DIR}/CONFIGS/vendor_dlkm_unpack.conf" "INPUT_IMAGE" "${REPO_ROOT}/stock/vendor_dlkm.img" && \
         replace_config_value "${AIT_DIR}/CONFIGS/vendor_dlkm_unpack.conf" "EXTRACT_DIR" "${OUTPUT_DIR}" && \
         cd "${AIT_DIR}" && \
