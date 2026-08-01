@@ -30,7 +30,17 @@ replace_config_value() {
     sed -i "s|^\($var_name=\).*|\1$new_value|" "$file" 
 }
 
-# 01. run LKM_Tools
+# 01. unpack stock vendor_dlkm.img
+unpack_vendor_dlkm() {
+    if [! -d "${AIT_DIR}/EXTRACTED_IMAGES/extracted_vendor_dlkm" ]; then
+        replace_config_value "${AIT_DIR}/CONFIGS/vendor_dlkm_unpack.conf" "INPUT_IMAGE" "${REPO_ROOT}/stock/vendor_dlkm.img" && \
+        replace_config_value "${AIT_DIR}/CONFIGS/vendor_dlkm_unpack.conf" "EXTRACT_DIR" "${OUTPUT_DIR}" && \
+        cd "${AIT_DIR}" && \
+        sudo ./android_image_tools.sh --conf=${AIT_DIR}/CONFIGS/vendor_dlkm_unpack.conf
+    fi
+}
+
+# 02. run LKM_Tools
 # Documentation: ./03.prepare_vendor_dlkm.sh <modules_list> <staging_dir> <oem_load_file> <system_map> <strip_tool> <output_dir> <vendor_boot_list> <nh_dir> [blacklist_file]
 package_modules() {
     mkdir -p "${MODULES_OUTPUT_DIR}" && \
@@ -46,22 +56,24 @@ package_modules() {
             ""
 }
 
-# 02. replace the config values
+# 03. replace the config values
 replace_config_values() {
     replace_config_value "${AIT_DIR}/CONFIGS/vendor_dlkm_repack.conf" "SOURCE_DIR" "${OUTPUT_DIR}" && \
     replace_config_value "${AIT_DIR}/CONFIGS/vendor_dlkm_repack.conf" "OUTPUT_IMAGE" "${REPO_ROOT}/prebuilts/vendor_dlkm_unpack/REPACKED_IMAGES/vendor_dlkm_repacked.img"
 }
 
-# 03. build vendor_dlkm.img
+# 04. build vendor_dlkm.img
 build_vendor_dlkm() {
     cd "${AIT_DIR}" && \
         sudo ./android_image_tools.sh --conf=${AIT_DIR}/CONFIGS/vendor_dlkm_repack.conf && \
         mv "${AIT_DIR}/REPACKED_IMAGES/vendor_dlkm_repacked.img" "${REPO_ROOT}/external/AnyKernel3/vendor_dlkm.img" && \
+        rm -rf ${OUTPUT_DIR} && \
         cd "${REPO_ROOT}"
 }
 
 # main execution
-{ package_modules && \
+{ unpack_vendor_dlkm && \
+    package_modules && \
     replace_config_values && \
     build_vendor_dlkm
 } || {
