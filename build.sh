@@ -72,8 +72,8 @@ function setup_env() {
     
     # KBUILD Setting
     sudo timedatectl set-timezone "Asia/Manila" || export TZ="Asia/Manila"
-    export KBUILD_BUILD_USER="xfwdrev"
-    export KBUILD_BUILD_HOST="localhost"
+    export KBUILD_BUILD_USER="$(id -un)"
+    export KBUILD_BUILD_HOST="$(hostname)"
     export KBUILD_BUILD_TIMESTAMP=$(date)
     export KBUILD_BUILD_VERSION="${BUILD_VERSION}"
 
@@ -230,12 +230,7 @@ function build_kernel() {
                 echo "Warning: variant config '${variant_config}' not found!"
             fi
         
-        echo "Building Common Kernel..."
-        #(
-        #    cd kernel_platform
-        #    env ${GKI_KERNEL_BUILD_OPTIONS} ./build/build.sh
-        #) || { echo "Kernel build failed!"; exit 1; }
-
+        echo "Building full Kernel..."
         ( 
             env ${GKI_KERNEL_BUILD_OPTIONS} ${ANDROID_BUILD_TOP}/kernel_platform/build/android/prepare_vendor.sh sec ${TARGET_PRODUCT} 
         ) || { echo "Vendor build failed!"; exit 1; }
@@ -245,7 +240,15 @@ function build_kernel() {
             echo "ccache statistics:"
             ccache -s
         fi
-        
+
+    elif [ "$build_type" = "common" ]; then
+
+        echo "Building Common Kernel..."
+        (
+           cd kernel_platform
+           env ${GKI_KERNEL_BUILD_OPTIONS} ./build/build.sh
+        ) || { echo "Common Kernel build failed!"; exit 1; }
+
     elif [ "$build_type" = "tar" ]; then
         # Odin Tar Build
         # Uses prepare_vendor.sh
@@ -349,7 +352,7 @@ function update_repo() {
 }
 
 function show_usage() {
-    echo "Usage: $0 [ak3|tar|clean|tcclean|update]"
+    echo "Usage: $0 [ak3|common|tar|clean|tcclean|update]"
     exit 1
 }
 
@@ -368,6 +371,12 @@ case "$1" in
         setup_ksun
         build_kernel "ak3"
         package_ak3
+        ;;
+    common)
+        setup_env
+        prepare_toolchain
+        setup_ksun
+        build_kernel "common"
         ;;
     tar)
         setup_env
