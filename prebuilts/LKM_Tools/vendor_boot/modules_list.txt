@@ -99,7 +99,6 @@ guestvm_loader.ko
 hall_ic.ko
 hall_ic_notifier.ko
 hdcp.ko
-hdm.ko
 heap_mem_ext_v01.ko
 hung_task_enh.ko
 hvc_gunyah.ko
