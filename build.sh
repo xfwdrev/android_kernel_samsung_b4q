@@ -91,11 +91,37 @@ function setup_env() {
         mkdir -p "${ANDROID_PRODUCT_OUT}"
     fi
 
-    export KBUILD_EXTRA_SYMBOLS=${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/mmrm-driver/Module.symvers
+export KBUILD_EXTRA_SYMBOLS="${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/mmrm-driver/Module.symvers \
+		${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/datarmnet/core/Module.symvers \
+		${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/wlan/qcacld-3.0/Module.symvers \
+		${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/camera-kernel/Module.symvers \
+		${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/eva-kernel/Module.symvers \
+		${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/video-driver/Module.symvers \
+		${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/display-drivers/msm/Module.symvers \
+		${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/datarmnet-ext/aps/Module.symvers \
+		${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/datarmnet-ext/wlan/Module.symvers \
+		${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/datarmnet-ext/shs/Module.symvers \
+		${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/datarmnet-ext/perf_tether/Module.symvers \
+		${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/datarmnet-ext/perf/Module.symvers \
+		${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/datarmnet-ext/sch/Module.symvers \
+		${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/datarmnet-ext/offload/Module.symvers \
+		${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/dataipa/drivers/platform/msm/Module.symvers \
+		${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/audio-kernel/Module.symvers"
+
     export MODNAME=audio_dlkm
 
-    export KBUILD_EXT_MODULES="../vendor/qcom/opensource/datarmnet-ext/wlan \
+    export KBUILD_EXT_MODULES="../vendor/qcom/opensource/wlan/qcacld-3.0 \
+        ../vendor/qcom/opensource/dataipa/drivers/platform/msm \
         ../vendor/qcom/opensource/datarmnet/core \
+        ../vendor/qcom/opensource/datarmnet-ext/aps \
+        ../vendor/qcom/opensource/datarmnet-ext/offload \
+        ../vendor/qcom/opensource/datarmnet-ext/shs \
+        ../vendor/qcom/opensource/datarmnet-ext/sch \
+        ../vendor/qcom/opensource/datarmnet-ext/perf \
+        ../vendor/qcom/opensource/datarmnet-ext/perf_tether \
+        ../vendor/qcom/opensource/datarmnet-ext/wlan \
+        ../vendor/qcom/opensource/video-driver \
+        ../vendor/qcom/opensource/eva-kernel \
         ../vendor/qcom/opensource/mmrm-driver \
         ../vendor/qcom/opensource/audio-kernel \
         ../vendor/qcom/opensource/camera-kernel \
@@ -268,7 +294,7 @@ function package_ak3() {
 
     chmod -R +x prebuilts/
 
-    cp -a ${ANDROID_BUILD_TOP}/prebuilts/prebuilts/* ${ANDROID_BUILD_TOP}/out/msm-${CHIPSET_NAME}-${CHIPSET_NAME}-${TARGET_PRODUCT}/dist/
+    mv ${DIST_DIR}/wlan.ko ${DIST_DIR}/qca_cld3_wlan.ko
 
     echo "Building vendor_boot.img"
     SCRIPT_DIR="${SCRIPT_DIR}" "${SCRIPT_DIR}/prebuilts/build_vendor_boot.sh" || exit 1
