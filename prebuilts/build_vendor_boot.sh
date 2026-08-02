@@ -10,7 +10,7 @@ BOOT_EDITOR_DIR="${REPO_ROOT}/prebuilts/vendor_boot_unpack"
 # input variables for LKM_Tools
 STAGING_DIR="${KBUILD_PATH}"
 SYSTEM_MAP="${KBUILD_PATH}/System.map"
-STRIP_TOOL="${REPO_ROOT}/kernel_platform/prebuilts-master/clang/host/linux-x86/clang-r416183b/bin/llvm-strip"
+STRIP_TOOL="${REPO_ROOT}/kernel_platform/prebuilts/clang/host/linux-x86/clang-r437112/bin/llvm-strip"
 MODULES_LIST="${LKM_TOOLS_DIR}/vendor_boot/modules_list.txt"
 OEM_LOAD_FILE="${LKM_TOOLS_DIR}/vendor_boot/modules.load"
 OUTPUT_DIR="${BOOT_EDITOR_DIR}/build/unzip_boot/root.1/lib/modules"
