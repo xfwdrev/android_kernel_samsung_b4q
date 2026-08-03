@@ -10,7 +10,7 @@ PKG_VENDOR_DLKM="${LKM_TOOLS_DIR}/03.prepare_vendor_dlkm.sh"
 # input variables for LKM_Tools
 STAGING_DIR="${KBUILD_PATH}"
 SYSTEM_MAP="${KBUILD_PATH}/System.map"
-STRIP_TOOL="${REPO_ROOT}/kernel_platform/prebuilts/clang/host/linux-x86/clang-r437112/bin/llvm-strip"
+STRIP_TOOL="${REPO_ROOT}/kernel_platform/prebuilts/clang/host/linux-x86/clang-r522817/bin/llvm-strip"
 VENDOR_DLKM_MODULES_LIST="${LKM_TOOLS_DIR}/vendor_dlkm/modules_list.txt"
 VENDOR_BOOT_MODULES_LIST="${LKM_TOOLS_DIR}/vendor_boot/modules_list.txt"
 VENDOR_DLKM_MODULES_LOAD_FILE="${LKM_TOOLS_DIR}/vendor_dlkm/modules.load"
