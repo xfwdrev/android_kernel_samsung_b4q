@@ -162,7 +162,7 @@ function prepare_toolchain() {
     "
 
     # Import Samsung toolchain
-    local TOOLCHAIN_URL="https://github.com/xfwdrev/samsung_prebuilts_toolchain/releases/download/clang18/toolchain.tar.gz"
+    local TOOLCHAIN_URL="https://github.com/xfwdrev/samsung_prebuilts_toolchain/releases/download/clang22/toolchain.tar.gz"
     local TOOLCHAIN_FILE=$(basename "$TOOLCHAIN_URL")
     local CHECK_DIR="kernel_platform/prebuilts"
 
