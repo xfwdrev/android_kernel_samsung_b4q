@@ -36,7 +36,7 @@ static void hw_bigdata_update_hw_param(uint32_t camera_id, struct cam_hw_param *
 	hw_param->need_update_to_file = TRUE;
 }
 
-static void hw_bigdata_count_mipi_error()
+static void hw_bigdata_count_mipi_error(void)
 {
 	uint32_t camera_id;
 	struct cam_hw_param *hw_param = NULL;

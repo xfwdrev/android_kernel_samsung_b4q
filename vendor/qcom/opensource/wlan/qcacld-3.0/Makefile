@@ -14,7 +14,6 @@ M ?= $(shell pwd)
 ifeq ($(WLAN_ROOT),)
 KBUILD_OPTIONS += \
     WLAN_ROOT=$(KERNEL_SRC)/$(M) \
-    WLAN_PLATFORM_ROOT=$(KERNEL_SRC)/$(M)/../platform \
     WLAN_COMMON_ROOT=cmn \
     WLAN_COMMON_INC=$(KERNEL_SRC)/$(M)/cmn \
     WLAN_FW_API=$(KERNEL_SRC)/$(M)/../fw-api \
@@ -27,7 +26,6 @@ KBUILD_OPTIONS += \
     WLAN_CTRL_NAME=wlan
 endif
 
-BUILD_OPTIONS += KBUILD_EXTRA_SYMBOLS=$(M)/../platform/Module.symvers
 KBUILD_OPTIONS += $(KBUILD_EXTRA) # Extra config if any
 
 all:

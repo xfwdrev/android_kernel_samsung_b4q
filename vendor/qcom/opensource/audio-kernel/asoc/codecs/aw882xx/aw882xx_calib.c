@@ -2143,7 +2143,7 @@ static int aw_cali_misc_switch_dev(struct file *filp, struct aw_device *aw_dev, 
 	struct aw_device *local_dev = NULL;
 
 	/* get sel dev str */
-	sscanf(cmd_buf, "dev_sel:%50s", dev_select);
+	sscanf(cmd_buf, "dev_sel:%49s", dev_select);
 
 	for (i = 0; i < AW_DEV_CH_MAX; i++) {
 		if (strnstr(dev_select,	ch_name[i], strlen(ch_name[i])))
