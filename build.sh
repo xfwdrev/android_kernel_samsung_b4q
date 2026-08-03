@@ -91,7 +91,7 @@ function setup_env() {
         mkdir -p "${ANDROID_PRODUCT_OUT}"
     fi
 
-export KBUILD_EXTRA_SYMBOLS="${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/mmrm-driver/Module.symvers \
+    export KBUILD_EXTRA_SYMBOLS="${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/mmrm-driver/Module.symvers \
 		${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/datarmnet/core/Module.symvers \
 		${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/wlan/qcacld-3.0/Module.symvers \
 		${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/camera-kernel/Module.symvers \
@@ -162,7 +162,7 @@ function prepare_toolchain() {
     "
 
     # Import Samsung toolchain
-    local TOOLCHAIN_URL="https://github.com/xfwdrev/samsung_prebuilts_toolchain/releases/download/toolchain/toolchain.tar.gz"
+    local TOOLCHAIN_URL="https://github.com/xfwdrev/samsung_prebuilts_toolchain/releases/download/clang18/toolchain.tar.gz"
     local TOOLCHAIN_FILE=$(basename "$TOOLCHAIN_URL")
     local CHECK_DIR="kernel_platform/prebuilts"
 
