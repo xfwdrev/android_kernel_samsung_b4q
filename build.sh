@@ -85,6 +85,8 @@ function setup_env() {
     export DIST_DIR=${ANDROID_BUILD_TOP}/out/msm-${CHIPSET_NAME}-${CHIPSET_NAME}-${TARGET_PRODUCT}/dist
     export MERGE_CONFIG="${ANDROID_BUILD_TOP}/kernel_platform/common/scripts/kconfig/merge_config.sh"
 
+    export CUST_DEFCONFIG="custom_defconfigs/b4q_defconfig"
+
     mkdir -p "${DIST_DIR}"
     
     if [ ! -d "${ANDROID_PRODUCT_OUT}" ]; then
@@ -180,7 +182,7 @@ function prepare_toolchain() {
 
 function setup_ksun() {
     local COMMON_DIR="${ANDROID_BUILD_TOP}/kernel_platform/common"
-    local KSUN_DIR="${COMMON_DIR}/drivers/kernelsu"
+    local KSUN_DIR="${COMMON_DIR}/KernelSU-Next"
     local PATCH_FILE="${ANDROID_BUILD_TOP}/patches/0001-Enable-SuSFS-2.2.0-KSU-Next.patch"
     local SUS_MARKER="config KSU_SUSFS"
 
@@ -233,7 +235,7 @@ function build_kernel() {
         # Uses direct build/build.sh call
         export GKI_KERNEL_BUILD_OPTIONS="${common_options} SKIP_VENDOR_BOOT=1"
 
-            local variant_config="custom_defconfigs/b4q_defconfig"
+            local variant_config="${CUST_DEFCONFIG}"
             if [ -f "${variant_config}" ]; then
                 echo "Merging variant config: ${variant_config}"
                 export POST_DEFCONFIG_CMDS="check_defconfig && ${MERGE_CONFIG} -m \${OUT_DIR}/gki_kernel/common/.config ${ANDROID_BUILD_TOP}/${variant_config}"
