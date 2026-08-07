@@ -21,7 +21,7 @@ KBUILD_OPTIONS += \
     CONFIG_CNSS_QCA6490=y \
     WLAN_PROFILE=qca6490 \
     MODNAME=wlan \
-    DEVNAME=qca_cld3_wlan \
+    DEVNAME=qca6490 \
     BOARD_PLATFORM=waipio \
     WLAN_CTRL_NAME=wlan
 endif
