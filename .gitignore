@@ -3,8 +3,9 @@ device/
 out/
 zip/
 
-# Ignore ccache directory
+# Ignore directories
 .ccache/
+prebuilts/vendor_boot_unpack/.gradle/
 
 # Ignore prebuilts
 kernel_platform/prebuilts/
