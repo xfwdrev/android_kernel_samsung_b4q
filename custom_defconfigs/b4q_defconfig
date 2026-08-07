@@ -1,5 +1,3 @@
-# CONFIG_KNOX_NCM is not set
-
 # Disable Werror
 CONFIG_WERROR=n
 
