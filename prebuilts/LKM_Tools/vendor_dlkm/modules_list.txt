@@ -93,7 +93,6 @@ ipa_clientsm.ko
 ipa_fmwk.ko
 ipam.ko
 ipanetm.ko
-kperfmon.ko
 lcd.ko
 leds-aw36518.ko
 leds-qpnp-vibrator-ldo.ko

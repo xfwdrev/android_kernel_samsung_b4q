@@ -117,7 +117,6 @@ if_cb_manager.ko
 input_booster_lkm.ko
 iommu-logger.ko
 ipa_fmwk.ko
-kperfmon.ko
 kryo_arm64_edac.ko
 lcd.ko
 leds-aw36518.ko
