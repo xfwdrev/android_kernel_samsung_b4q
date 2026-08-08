@@ -1,6 +1,6 @@
-From b607475a6c9c7a142716971bd1708b94f732c088 Mon Sep 17 00:00:00 2001
+From 947715ab633dd00e7df7be7f933662d2c5ed94ea Mon Sep 17 00:00:00 2001
 From: xfwdrev <74693315+xfwdrev@users.noreply.github.com>
-Date: Tue, 21 Jul 2026 23:41:46 +0800
+Date: Sat, 8 Aug 2026 18:24:00 +0800
 Subject: [PATCH] Enable SuSFS 2.2.0 KSU-Next
 
 Signed-off-by: xfwdrev <74693315+xfwdrev@users.noreply.github.com>
@@ -1156,7 +1156,7 @@ index 5bb59bfe..390a9146 100644
  {
      struct policydb *policydb;
 diff --git a/kernel/feature/sucompat.c b/kernel/feature/sucompat.c
-index 553cb6ae..45382bc1 100644
+index 553cb6ae..fbbccecf 100644
 --- a/kernel/feature/sucompat.c
 +++ b/kernel/feature/sucompat.c
 @@ -1,5 +1,3 @@
@@ -1332,7 +1332,7 @@ index 553cb6ae..45382bc1 100644
  
 -do_orig_facessat:
 -	return ksu_syscall_table[orig_nr](regs);
-+    if (likely(!strstr(filename->name, "/app_process") && !strstr(filename->name, "/adbd"))) {
++    if (likely(!strstr(filename->name, "/app_process") && !strstr(filename->name, "/adbd") && !strstr(filename->name, "/stub_zygote"))) {
 +        pr_info("susfs: mark no sucompat checks for pid: '%d', exec: '%s'\n", current->pid, filename->name);
 +        susfs_set_current_proc_umounted();
 +        return 0;
@@ -1736,10 +1736,10 @@ index 3a3dfea8..b8486238 100644
 -
  #endif
 diff --git a/kernel/hook/syscall_event_bridge.c b/kernel/hook/syscall_event_bridge.c
-index f866a498..eb7ea937 100644
+index a961321b..c5c8ad03 100644
 --- a/kernel/hook/syscall_event_bridge.c
 +++ b/kernel/hook/syscall_event_bridge.c
-@@ -49,18 +49,36 @@ static int ksu_handle_init_mark_tracker(const char __user **filename_user)
+@@ -50,18 +50,36 @@ static int ksu_handle_init_mark_tracker(const char __user **filename_user)
  
  long __nocfi ksu_hook_newfstatat(int orig_nr, const struct pt_regs *regs)
  {
@@ -1778,7 +1778,7 @@ index f866a498..eb7ea937 100644
  }
  
  DEFINE_STATIC_KEY_TRUE(ksud_execve_key);
-@@ -91,7 +109,7 @@ long __nocfi ksu_hook_execve(int orig_nr, const struct pt_regs *regs)
+@@ -92,7 +110,7 @@ long __nocfi ksu_hook_execve(int orig_nr, const struct pt_regs *regs)
              pr_err("adb root failed: %ld\n", ret);
          }
      } else if (ksu_su_compat_enabled) {
