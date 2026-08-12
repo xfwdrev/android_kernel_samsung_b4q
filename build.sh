@@ -1,190 +1,51 @@
 #!/bin/bash
-set -e
 
-# ===============================================================================================================
-#
-#                                Galaxy Z Flip4 Kernel Compiling Script
-#
-# ===============================================================================================================
-#
-#   Workflow:
-#   1. Fork this kernel repo in your repositories
-#   2. Go to the Actions > Select Kernel Build
-#   3. Run workflow > Branch: 15 > Run Workflow
-#   4. It takes about 30~50mins... (Scamsung Flagship GKI Kernel Source is very huge)
-#   5. Workflow Upload Cooked boot.img or Flashable Odin tar file(include FastbootD patched recovery)
-#   6. Download file and Flash Cooked file in Odin or FastbootD (If you first, You have to Use Odin)
-#
-# ===============================================================================================================
-#
-#   Local:
-#   1. clone this kernel repo in your local LinuxPC
-#   2. Custom Edit kernel source (If you dont know Kernel Knowledge, I recommend skip this step)
-#   3. Open the Terminal > Wrtie and Run This command
-#
-#                                          ./build.sh [ak3|tar|clean|tcclean|update]
-#
-#   4. It takes about 30~50mins... (Scamsung Flagship GKI Kernel Source is very huge)
-#                 ** Required at least 40~50GB in your local PC Storage **
-#   5. Compiler put out Cooked boot.img or Flashable Odin tar file(include FastbootD patched recovery)
-#   6. Download file and Flash Cooked file in Odin or FastbootD (If you first, You have to Use Odin)
-#
-#                                 - xfwdrev (Thank You GoRhanHee, Yoro1836 and Ravindu)
-# ===============================================================================================================
-
-# -----------------------------------------------------------------------------
-# Configuration & Setup
-# -----------------------------------------------------------------------------
-
-function setup_env() {
-    echo "Setting up environment..."
-    
-    # Update submodules to latest
-    echo "Updating submodules..."
-    git submodule update --init --recursive --remote
-
-    # DIR Setting
-    SCRIPT_DIR="$(dirname $(readlink -fq $0))"
-
-    VERSION_FILE="${SCRIPT_DIR}/.build_incremental"
-
-    if [[ -f "${VERSION_FILE}" ]]; then
-        BUILD_VERSION=$(( $(cat "${VERSION_FILE}") + 1 ))
-    else
-        BUILD_VERSION=1
-    fi
-
-    echo "${BUILD_VERSION}" > "${VERSION_FILE}"
-
-    # OEM Setting
-    BUILD_TARGET=b4q_eur_openx
-    export MODEL=$(echo $BUILD_TARGET | cut -d'_' -f1)
-    export PROJECT_NAME=${MODEL}
-    export REGION=$(echo $BUILD_TARGET | cut -d'_' -f2)
-    export CARRIER=$(echo $BUILD_TARGET | cut -d'_' -f3)
-    export TARGET_BUILD_VARIANT=user
-
-    CHIPSET_NAME=waipio
-
-    export ANDROID_BUILD_TOP=$(pwd)
-    export TARGET_PRODUCT=gki
-    export TARGET_BOARD_PLATFORM=gki
-    
-    # KBUILD Setting
-    sudo timedatectl set-timezone "Asia/Manila" || export TZ="Asia/Manila"
-    export KBUILD_BUILD_USER="$(id -un)"
-    export KBUILD_BUILD_HOST="$(hostname)"
-    export KBUILD_BUILD_TIMESTAMP=$(date)
-    export KBUILD_BUILD_VERSION="${BUILD_VERSION}"
-
-    # Kernel Version Customization
-    export LOCALVERSION="$VERSION_SUFFIX"
-
-    export ANDROID_PRODUCT_OUT=${ANDROID_BUILD_TOP}/out/target/product/${MODEL}
-    export OUT_DIR=${ANDROID_BUILD_TOP}/out/msm-${CHIPSET_NAME}-${CHIPSET_NAME}-${TARGET_PRODUCT}
-    export DIST_DIR=${ANDROID_BUILD_TOP}/out/msm-${CHIPSET_NAME}-${CHIPSET_NAME}-${TARGET_PRODUCT}/dist
-    export MERGE_CONFIG="${ANDROID_BUILD_TOP}/kernel_platform/common/scripts/kconfig/merge_config.sh"
-
-    export CUST_DEFCONFIG="custom_defconfigs/b4q_defconfig"
-
-    mkdir -p "${DIST_DIR}"
-    
-    if [ ! -d "${ANDROID_PRODUCT_OUT}" ]; then
-        mkdir -p "${ANDROID_PRODUCT_OUT}"
-    fi
-
-    export KBUILD_EXTRA_SYMBOLS="${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/mmrm-driver/Module.symvers \
-		${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/datarmnet/core/Module.symvers \
-		${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/wlan/qcacld-3.0/Module.symvers \
-		${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/camera-kernel/Module.symvers \
-		${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/eva-kernel/Module.symvers \
-		${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/video-driver/Module.symvers \
-		${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/display-drivers/msm/Module.symvers \
-		${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/datarmnet-ext/aps/Module.symvers \
-		${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/datarmnet-ext/wlan/Module.symvers \
-		${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/datarmnet-ext/shs/Module.symvers \
-		${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/datarmnet-ext/perf_tether/Module.symvers \
-		${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/datarmnet-ext/perf/Module.symvers \
-		${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/datarmnet-ext/sch/Module.symvers \
-		${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/datarmnet-ext/offload/Module.symvers \
-		${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/dataipa/drivers/platform/msm/Module.symvers \
-		${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/audio-kernel/Module.symvers"
-
-    export MODNAME=audio_dlkm
-
-    export KBUILD_EXT_MODULES="../vendor/qcom/opensource/wlan/qcacld-3.0 \
-        ../vendor/qcom/opensource/dataipa/drivers/platform/msm \
-        ../vendor/qcom/opensource/datarmnet/core \
-        ../vendor/qcom/opensource/datarmnet-ext/aps \
-        ../vendor/qcom/opensource/datarmnet-ext/offload \
-        ../vendor/qcom/opensource/datarmnet-ext/shs \
-        ../vendor/qcom/opensource/datarmnet-ext/sch \
-        ../vendor/qcom/opensource/datarmnet-ext/perf \
-        ../vendor/qcom/opensource/datarmnet-ext/perf_tether \
-        ../vendor/qcom/opensource/datarmnet-ext/wlan \
-        ../vendor/qcom/opensource/video-driver \
-        ../vendor/qcom/opensource/eva-kernel \
-        ../vendor/qcom/opensource/mmrm-driver \
-        ../vendor/qcom/opensource/audio-kernel \
-        ../vendor/qcom/opensource/camera-kernel \
-        ../vendor/qcom/opensource/display-drivers/msm"
-
-    # CCACHE Setting
-    if command -v ccache >/dev/null 2>&1; then
-        echo "ccache found! Enabling..."
-        export USE_CCACHE=1
-        export CCACHE_EXEC=$(command -v ccache)
-        export CCACHE_DIR="${ANDROID_BUILD_TOP}/.ccache"
-        export CCACHE_COMPILERCHECK=content
-        export CCACHE_COMPRESS=1
-        export CCACHE_MAXSIZE=10G
-        export CCACHE_BASEDIR="${ANDROID_BUILD_TOP}"
-        mkdir -p "$CCACHE_DIR"
-        ccache -z # Zero stats at start
-
-        # Masquerade clang/gcc to force ccache usage
-        local CACHED_BIN_DIR="${ANDROID_BUILD_TOP}/.ccache/bin"
-        mkdir -p "$CACHED_BIN_DIR"
-        for tool in clang clang++ gcc g++ cc c++; do
-            ln -sf "$CCACHE_EXEC" "${CACHED_BIN_DIR}/${tool}"
-        done
-        export PATH="${CACHED_BIN_DIR}:${PATH}"
-        echo "CCache masquerading enabled in ${CACHED_BIN_DIR}"
-    else
-        echo "ccache not found. Skipping..."
-    fi
+abort()
+{
+    cd -
+    echo "-----------------------------------------------"
+    echo "Kernel compilation failed! Exiting..."
+    echo "-----------------------------------------------"
+    exit -1
 }
 
-function prepare_toolchain() {
-    # MKBOOTIMG Setting
-    export MKBOOTIMG_EXTRA_ARGS="
-        --os_version 12.0.0 \
-        --os_patch_level 2026-04 \
-        --pagesize 4096
-    "
-
-    # Import Samsung toolchain
-    local TOOLCHAIN_URL="https://github.com/xfwdrev/samsung_prebuilts_toolchain/releases/download/clang22/toolchain.tar.gz"
-    local TOOLCHAIN_FILE=$(basename "$TOOLCHAIN_URL")
-    local CHECK_DIR="kernel_platform/prebuilts"
-
-    if [ -d "$CHECK_DIR" ]; then
-        echo "Directory '$CHECK_DIR' already exists. Skipping download toolchain."
-    else
-        echo "Directory '$CHECK_DIR' not found. Starting download toolchain..."
-        if [ ! -f "$TOOLCHAIN_FILE" ]; then
-            wget -q --show-progress --progress=dot:giga -O "$TOOLCHAIN_FILE" "$TOOLCHAIN_URL"
-        fi
-        tar -xzf "$TOOLCHAIN_FILE" -C kernel_platform && rm "$TOOLCHAIN_FILE"
-        echo "Complete Download."
-    fi
+unset_flags()
+{
+    cat << EOF
+Usage: $(basename "$0") [options]
+Options
+    -d, --droidspaces [y/N]        Include Droidspaces support
+    -s, --susfs [y/N]              Include SuSFS
+    -r, --recovery [y/N]           Compile kernel for an Android Recovery																 
+EOF
 }
 
-function setup_ksun() {
-    local COMMON_DIR="${ANDROID_BUILD_TOP}/kernel_platform/common"
-    local KSUN_DIR="${COMMON_DIR}/KernelSU-Next"
-    local PATCH_FILE="${ANDROID_BUILD_TOP}/patches/0001-Enable-SuSFS-2.2.0-KSU-Next.patch"
-    local SUS_MARKER="config KSU_SUSFS"
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --droidspaces|-d)
+            DS_OPTION="$2"
+            shift 2
+            ;;
+        --susfs|-s)
+            SUSFS_OPTION="$2"
+            shift 2
+            ;;
+        --recovery|-r)
+            RECOVERY_OPTION="$2"
+            shift 2
+            ;;
+        *)\
+            unset_flags
+            exit 1
+            ;;
+    esac
+done
+
+enable_susfs() {
+    COMMON_DIR="${ANDROID_BUILD_TOP}/kernel_platform/common"
+    KSUN_DIR="${COMMON_DIR}/KernelSU-Next"
+    PATCH_FILE="${ANDROID_BUILD_TOP}/patches/0001-Enable-SuSFS-2.2.0-KSU-Next.patch"
+    SUS_MARKER="config KSU_SUSFS"
 
     if [ ! -f "${PATCH_FILE}" ]; then
         echo "Patch not found:"
@@ -208,11 +69,125 @@ function setup_ksun() {
         }
 }
 
-# -----------------------------------------------------------------------------
-# Build Functions
-# -----------------------------------------------------------------------------
+echo "Preparing the build environment..."
 
-function get_common_build_options() {
+pushd $(dirname "$0") > /dev/null
+
+SCRIPT_DIR="$(dirname $(readlink -fq $0))"
+VERSION_FILE="${SCRIPT_DIR}/.build_incremental"
+
+if [[ -f "${VERSION_FILE}" ]]; then
+    BUILD_VERSION=$(( $(cat "${VERSION_FILE}") + 1 ))
+else
+    BUILD_VERSION=1
+fi
+
+echo "${BUILD_VERSION}" > "${VERSION_FILE}"
+
+BUILD_TARGET=b4q_eur_openx
+export MODEL=$(echo $BUILD_TARGET | cut -d'_' -f1)
+export PROJECT_NAME=${MODEL}
+export REGION=$(echo $BUILD_TARGET | cut -d'_' -f2)
+export CARRIER=$(echo $BUILD_TARGET | cut -d'_' -f3)
+export TARGET_BUILD_VARIANT=user
+
+CHIPSET_NAME=waipio
+
+export ANDROID_BUILD_TOP=$(pwd)
+export TARGET_PRODUCT=gki
+export TARGET_BOARD_PLATFORM=gki
+
+sudo timedatectl set-timezone "Asia/Manila" || export TZ="Asia/Manila"
+export KBUILD_BUILD_USER="$(id -un)"
+export KBUILD_BUILD_HOST="$(hostname)"
+export KBUILD_BUILD_TIMESTAMP=$(date)
+export KBUILD_BUILD_VERSION="${BUILD_VERSION}"
+
+
+export LOCALVERSION="$VERSION_SUFFIX"
+
+export ANDROID_PRODUCT_OUT=${ANDROID_BUILD_TOP}/out/target/product/${MODEL}
+export OUT_DIR=${ANDROID_BUILD_TOP}/out/msm-${CHIPSET_NAME}-${CHIPSET_NAME}-${TARGET_PRODUCT}
+export DIST_DIR=${ANDROID_BUILD_TOP}/out/msm-${CHIPSET_NAME}-${CHIPSET_NAME}-${TARGET_PRODUCT}/dist
+export MERGE_CONFIG="${ANDROID_BUILD_TOP}/kernel_platform/common/scripts/kconfig/merge_config.sh"
+
+export CUST_DEFCONFIG="custom_defconfigs/b4q_defconfig"
+
+mkdir -p "${DIST_DIR}"
+    
+if [ ! -d "${ANDROID_PRODUCT_OUT}" ]; then
+    mkdir -p "${ANDROID_PRODUCT_OUT}"
+fi
+
+export KBUILD_EXTRA_SYMBOLS="${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/mmrm-driver/Module.symvers \
+	${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/datarmnet/core/Module.symvers \
+	${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/wlan/qcacld-3.0/Module.symvers \
+	${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/camera-kernel/Module.symvers \
+	${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/eva-kernel/Module.symvers \
+	${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/video-driver/Module.symvers \
+	${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/display-drivers/msm/Module.symvers \
+	${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/datarmnet-ext/aps/Module.symvers \
+	${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/datarmnet-ext/wlan/Module.symvers \
+	${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/datarmnet-ext/shs/Module.symvers \
+	${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/datarmnet-ext/perf_tether/Module.symvers \
+	${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/datarmnet-ext/perf/Module.symvers \
+	${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/datarmnet-ext/sch/Module.symvers \
+	${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/datarmnet-ext/offload/Module.symvers \
+	${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/dataipa/drivers/platform/msm/Module.symvers \
+	${ANDROID_BUILD_TOP}/out/vendor/qcom/opensource/audio-kernel/Module.symvers"
+
+export MODNAME=audio_dlkm
+
+export KBUILD_EXT_MODULES="../vendor/qcom/opensource/wlan/qcacld-3.0 \
+    ../vendor/qcom/opensource/dataipa/drivers/platform/msm \
+    ../vendor/qcom/opensource/datarmnet/core \
+    ../vendor/qcom/opensource/datarmnet-ext/aps \
+    ../vendor/qcom/opensource/datarmnet-ext/offload \
+    ../vendor/qcom/opensource/datarmnet-ext/shs \
+    ../vendor/qcom/opensource/datarmnet-ext/sch \
+    ../vendor/qcom/opensource/datarmnet-ext/perf \
+    ../vendor/qcom/opensource/datarmnet-ext/perf_tether \
+    ../vendor/qcom/opensource/datarmnet-ext/wlan \
+    ../vendor/qcom/opensource/video-driver \
+    ../vendor/qcom/opensource/eva-kernel \
+    ../vendor/qcom/opensource/mmrm-driver \
+    ../vendor/qcom/opensource/audio-kernel \
+    ../vendor/qcom/opensource/camera-kernel \
+    ../vendor/qcom/opensource/display-drivers/msm"
+
+# Define prebuilts variables
+PREBUILTS_DIR=${ANDROID_BUILD_TOP}/kernel_platform/prebuilts
+TOOLCHAIN_URL="https://github.com/xfwdrev/samsung_prebuilts_toolchain/releases/download/clang22/toolchain.tar.gz"
+TOOLCHAIN_FILE=$(basename "$TOOLCHAIN_URL")
+
+# Check if prebuilts exists
+if [ ! -d "$PREBUILTS_DIR" ]; then
+    echo "-----------------------------------------------"
+    echo "Prebuilts not found! Downloading..."
+    echo "-----------------------------------------------"
+    wget -q --show-progress --progress=dot:giga -O "$TOOLCHAIN_FILE" "$TOOLCHAIN_URL"
+    tar -xzf "$TOOLCHAIN_FILE" -C kernel_platform && rm "$TOOLCHAIN_FILE"
+    echo "Cleaning up..."
+fi
+
+if [[ "$RECOVERY_OPTION" == "y" ]]; then
+    RECOVERY=recovery_defconfig
+    SUSFS_OPTION=n
+fi
+
+if [[ "$DS_OPTION" == "y" ]]; then
+    DS=droidspaces_defconfig
+fi
+
+if [[ "$SUSFS_OPTION" == "y" ]]; then
+    SUSFS=susfs_defconfig
+fi
+
+if [ ! -d "${ANDROID_BUILD_TOP}/zip" ]; then
+    mkdir -p "${ANDROID_BUILD_TOP}/zip"
+fi
+
+get_common_build_options() {
     echo "
     SKIP_MRPROPER=1 \
     LTO=thin \
@@ -224,65 +199,63 @@ function get_common_build_options() {
     "
 }
 
-function build_kernel() {
-    local build_type=$1
-    echo "Starting Build for $build_type..."
+build_kernel() {
+    # Build kernel image
+    echo "-----------------------------------------------"
+    echo "Defconfig: "$CUST_DEFCONFIG""
 
-    local common_options=$(get_common_build_options)
-
-    if [ "$build_type" = "ak3" ]; then
-        # GKI Build for AnyKernel3
-        # Uses direct build/build.sh call
-        export GKI_KERNEL_BUILD_OPTIONS="${common_options} SKIP_VENDOR_BOOT=1"
-
-            local variant_config="${CUST_DEFCONFIG}"
-            if [ -f "${variant_config}" ]; then
-                echo "Merging variant config: ${variant_config}"
-                export POST_DEFCONFIG_CMDS="check_defconfig && ${MERGE_CONFIG} -m \${OUT_DIR}/gki_kernel/common/.config ${ANDROID_BUILD_TOP}/${variant_config}"
-            else
-                echo "Warning: variant config '${variant_config}' not found!"
-            fi
-        
-        echo "Building full Kernel..."
-        ( 
-            env ${GKI_KERNEL_BUILD_OPTIONS} ${ANDROID_BUILD_TOP}/kernel_platform/build/android/prepare_vendor.sh sec ${TARGET_PRODUCT} 
-        ) || { echo "Vendor build failed!"; exit 1; }
-
-        
-        if [ "$USE_CCACHE" = "1" ]; then
-            echo "ccache statistics:"
-            ccache -s
-        fi
-
-    elif [ "$build_type" = "common" ]; then
-
-        echo "Building Common Kernel..."
-        (
-           cd kernel_platform
-           env ${GKI_KERNEL_BUILD_OPTIONS} ./build/build.sh
-        ) || { echo "Common Kernel build failed!"; exit 1; }
-
-    elif [ "$build_type" = "tar" ]; then
-        # Odin Tar Build
-        # Uses prepare_vendor.sh
-        export GKI_KERNEL_BUILD_OPTIONS="${common_options} \
-            BUILD_BOOT_IMG=1 \
-            MKBOOTIMG_PATH=${ANDROID_BUILD_TOP}/kernel_platform/tools/mkbootimg/mkbootimg.py \
-            BOOT_IMAGE_HEADER_VERSION=4"
-            
-        echo "Building Kernel & Vendor Modules..."
-        ( 
-            env ${GKI_KERNEL_BUILD_OPTIONS} ${ANDROID_BUILD_TOP}/kernel_platform/build/android/prepare_vendor.sh sec ${TARGET_PRODUCT} 
-        ) || { echo "Vendor build failed!"; exit 1; }
-
-        if [ "$USE_CCACHE" = "1" ]; then
-            echo "ccache statistics:"
-            ccache -s
-        fi
+    if [ -z "$SUSFS" ]; then
+        echo "SUSFS: N"
+    else
+        echo "SUSFS: $SUSFS"
     fi
+    if [ -z "$DS" ]; then
+        echo "Droidspaces: N"
+    else
+        echo "Droidspaces: $DS"
+    fi
+    if [ -z "$RECOVERY" ]; then
+    echo "Recovery: N"
+    else
+        echo "Recovery: Y"
+    fi
+    
+    COMMON_OPTIONS=$(get_common_build_options)
+    export GKI_KERNEL_BUILD_OPTIONS="${COMMON_OPTIONS} SKIP_VENDOR_BOOT=1"
+    COMMON_CONFIG="${CUST_DEFCONFIG}"
+
+    if [ -f "${COMMON_CONFIG}" ]; then
+        echo "Merging Common device config: ${COMMON_CONFIG}"
+        export POST_DEFCONFIG_CMDS="check_defconfig && ${MERGE_CONFIG} -m \${OUT_DIR}/gki_kernel/common/.config ${ANDROID_BUILD_TOP}/${COMMON_CONFIG}"
+        
+        if [[ "$RECOVERY_OPTION" == "y" ]]; then
+            echo "Merging Recovery config: ${RECOVERY}"
+            export POST_DEFCONFIG_CMDS="${POST_DEFCONFIG_CMDS} && ${MERGE_CONFIG} -m \${OUT_DIR}/gki_kernel/common/.config ${ANDROID_BUILD_TOP}/custom_defconfigs/${RECOVERY}"
+        fi
+
+        if [[ "$DS_OPTION" == "y" ]]; then
+            echo "Merging DroidSpaces config: ${DS}"
+            export POST_DEFCONFIG_CMDS="${POST_DEFCONFIG_CMDS} && ${MERGE_CONFIG} -m \${OUT_DIR}/gki_kernel/common/.config ${ANDROID_BUILD_TOP}/custom_defconfigs/${DS}"
+        fi
+
+        if [[ "$SUSFS_OPTION" == "y" ]]; then
+            echo "Merging SuSFS config: ${SUSFS}"
+            export POST_DEFCONFIG_CMDS="${POST_DEFCONFIG_CMDS} && ${MERGE_CONFIG} -m \${OUT_DIR}/gki_kernel/common/.config ${ANDROID_BUILD_TOP}/custom_defconfigs/${SUSFS}"
+        fi
+    else
+        echo "Warning: Common config '${COMMON_CONFIG}' not found!"
+    fi
+        
+    echo "Building kernel..."
+    echo "-----------------------------------------------"
+    env ${GKI_KERNEL_BUILD_OPTIONS} ${ANDROID_BUILD_TOP}/kernel_platform/build/android/prepare_vendor.sh sec ${TARGET_PRODUCT} || abort
 }
 
-function package_ak3() {
+build_zip() {
+    echo "-----------------------------------------------"
+    echo "Building AK3 zip..."
+    echo "-----------------------------------------------"
+
     echo "Cleanup old images"
     if [ -f "${ANDROID_BUILD_TOP}/external/AnyKernel3/Image" ]; then
         rm -f \
@@ -305,109 +278,46 @@ function package_ak3() {
     SCRIPT_DIR="${SCRIPT_DIR}" "${SCRIPT_DIR}/prebuilts/build_vendor_dlkm.sh" || exit 1
 
     echo "Packing images with AnyKernel3"
-    version=$(grep -o 'CONFIG_LOCALVERSION="[^"]*"' custom_defconfigs/b4q_defconfig | cut -d '"' -f 2)
+
+    pushd "${ANDROID_BUILD_TOP}/external/AnyKernel3" > /dev/null
+
+    version=$(grep -o 'CONFIG_LOCALVERSION="[^"]*"' "${ANDROID_BUILD_TOP}/${CUST_DEFCONFIG}" | cut -d '"' -f 2)
     version=${version:1}
     DATE=`date +"%d-%m-%Y_%H-%M-%S"`
-    
-    zipname="${version}_${DATE}-$(git rev-parse --short=8 HEAD)"
 
-    cd external/AnyKernel3
-    zip -r9 ${zipname}.zip * -x ".git*" "README.md" "*placeholder"
-
-    if [ ! -d "${ANDROID_BUILD_TOP}/zip" ]; then
-        mkdir -p "${ANDROID_BUILD_TOP}/zip"
+    if [[ "$SUSFS_OPTION" == "y" ]]; then
+        ZIPNAME="${version}_SUSFS_OFFICIAL_${DATE}-$(git rev-parse --short=8 HEAD).zip"
+    else
+        ZIPNAME="${version}_KSUN_OFFICIAL_${DATE}-$(git rev-parse --short=8 HEAD).zip"
     fi
 
-    mv ${zipname}.zip "${ANDROID_BUILD_TOP}/zip"
-    cd - > /dev/null
-    
-    echo "Done! Build Complete."
+    zip -r9 "${ANDROID_BUILD_TOP}/zip/${ZIPNAME}" * -x ".git*" "README.md" "*placeholder" || abort
+    popd > /dev/null
 }
 
-function package_tar() {
-    echo "Packaging for Odin..."
-    local dist_path="./out/msm-${CHIPSET_NAME}-${CHIPSET_NAME}-${TARGET_PRODUCT}/dist"
-    
-    if [ ! -f "$dist_path/vendor_boot.img" ] || [ ! -f "$dist_path/boot.img" ]; then
-        echo "Error: boot.img or vendor_boot.img not found in $dist_path"
-        exit 1
-    fi
+BUILD_START=$(date +%s)
 
-    cp "$dist_path/vendor_boot.img" ./vendor_boot.img
-    cp "$dist_path/boot.img" ./boot.img
-    
-    tar -cvf ChicletKernel_b4q.tar boot.img vendor_boot.img
-    
-    echo "Done! Build Complete."
-}
+enable_susfs
+build_kernel
 
-# -----------------------------------------------------------------------------
-# Utility Functions
-# -----------------------------------------------------------------------------
-
-function clean_out() {
-    echo "Cleaning out directory..."
-    rm -rf out device || echo "No need to clean out"
-    echo "Cleaned up."
-}
-
-function clean_toolchain() {
-    echo "Cleaning toolchain..."
-    rm -rf kernel_platform/prebuilts* || echo "No need to clean toolchain"
-    echo "Toolchain cleaned up."
-}
-
-function update_repo() {
-    echo "Updating repository..."
-    git pull || true
-    git submodule update --remote || true
-    echo "Updated."
-}
-
-function show_usage() {
-    echo "Usage: $0 [ak3|common|tar|clean|tcclean|update]"
-    exit 1
-}
-
-# -----------------------------------------------------------------------------
-# Main Execution
-# -----------------------------------------------------------------------------
-
-if [ "$#" -ne 1 ]; then
-    show_usage
+if [ -z "$RECOVERY" ]; then
+build_zip
 fi
 
-case "$1" in
-    ak3)
-        setup_env
-        prepare_toolchain
-        setup_ksun
-        build_kernel "ak3"
-        package_ak3
-        ;;
-    common)
-        setup_env
-        prepare_toolchain
-        setup_ksun
-        build_kernel "common"
-        ;;
-    tar)
-        setup_env
-        prepare_toolchain
-        setup_ksun
-        build_kernel "tar"
-        package_tar
-        ;;
-    clean)
-        clean_out
-        ;;
-    tcclean)
-        clean_toolchain
-        ;;
-    update)
-        update_repo
-        ;;
-    *)
-        show_usage
-        ;;
-esac
+echo "-----------------------------------------------"
+
+BUILD_END=$(date +%s)
+BUILD_TIME=$((BUILD_END - BUILD_START))
+
+if [ "$BUILD_TIME" -ge 3600 ]; then
+    printf "Build finished successfully! Build time: \033[1;32m%dh %dm %ds\033[0m\n" \
+        $((BUILD_TIME / 3600)) \
+        $(((BUILD_TIME % 3600) / 60)) \
+        $((BUILD_TIME % 60))
+elif [ "$BUILD_TIME" -ge 60 ]; then
+    printf "Build finished successfully! Build time: \033[1;32m%dm %ds\033[0m\n" \
+        $((BUILD_TIME / 60)) \
+        $((BUILD_TIME % 60))
+else
+    printf "Build finished successfully! Build time: \033[1;32m%ds\033[0m\n" "$BUILD_TIME"
+fi
