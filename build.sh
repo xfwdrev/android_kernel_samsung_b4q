@@ -1,4 +1,6 @@
 #!/bin/bash
+KVER="-v1.1"
+RVER="-v1.1"
 
 abort()
 {
@@ -187,6 +189,43 @@ if [ ! -d "${ANDROID_BUILD_TOP}/zip" ]; then
     mkdir -p "${ANDROID_BUILD_TOP}/zip"
 fi
 
+set_localversion() {
+    CONFIG_FILE="${ANDROID_BUILD_TOP}/${CUST_DEFCONFIG}"
+
+    OL=$(grep -E '^CONFIG_LOCALVERSION=' "$CONFIG_FILE")
+
+    if [[ -z "$OL" ]]; then
+        echo "ERROR: CONFIG_LOCALVERSION not found in ${CONFIG_FILE}"
+        return 1
+    fi
+
+    BASE_LV=$(echo "$OL" | cut -d'"' -f2)
+
+    trap 'sed -i "s|^CONFIG_LOCALVERSION=.*|${OL}|" "$CONFIG_FILE"' EXIT
+
+    if [[ "$RECOVERY_OPTION" != "y" ]]; then
+        VRSN="$KVER"
+    else
+        VRSN="$RVER"
+    fi
+
+    if [[ "$RECOVERY_OPTION" == "y" ]]; then
+        LV_SUFFIX="-TWRP"
+    elif [[ "$SUSFS_OPTION" == "y" ]]; then
+        LV_SUFFIX="-KSUN-SUSFS"
+    else
+        LV_SUFFIX="-KSUN"
+    fi
+
+    UPDATED_LV="${BASE_LV}-${MODEL}${VRSN}${LV_SUFFIX}"
+
+    sed -i \
+        "s|^CONFIG_LOCALVERSION=.*|CONFIG_LOCALVERSION=\"${UPDATED_LV}\"|" \
+        "$CONFIG_FILE"
+
+    echo "LOCALVERSION: ${UPDATED_LV}"
+}
+
 get_common_build_options() {
     echo "
     SKIP_MRPROPER=1 \
@@ -281,14 +320,14 @@ build_zip() {
 
     pushd "${ANDROID_BUILD_TOP}/external/AnyKernel3" > /dev/null
 
-    version=$(grep -o 'CONFIG_LOCALVERSION="[^"]*"' "${ANDROID_BUILD_TOP}/${CUST_DEFCONFIG}" | cut -d '"' -f 2)
+    version=$(grep '^CONFIG_LOCALVERSION=' "${ANDROID_BUILD_TOP}/${CUST_DEFCONFIG}" | cut -d'"' -f2 | sed 's/-'"${MODEL}"'.*//')
     version=${version:1}
     DATE=`date +"%d-%m-%Y_%H-%M-%S"`
 
     if [[ "$SUSFS_OPTION" == "y" ]]; then
-        ZIPNAME="${version}_SUSFS_OFFICIAL_${DATE}-$(git rev-parse --short=8 HEAD).zip"
+        ZIPNAME="${version}${KVER}_${MODEL}_SUSFS_OFFICIAL_${DATE}-$(git rev-parse --short=8 HEAD).zip"
     else
-        ZIPNAME="${version}_KSUN_OFFICIAL_${DATE}-$(git rev-parse --short=8 HEAD).zip"
+        ZIPNAME="${version}${KVER}_${MODEL}_KSUN_OFFICIAL_${DATE}-$(git rev-parse --short=8 HEAD).zip"
     fi
 
     zip -r9 "${ANDROID_BUILD_TOP}/zip/${ZIPNAME}" * -x ".git*" "README.md" "*placeholder" || abort
@@ -298,6 +337,7 @@ build_zip() {
 BUILD_START=$(date +%s)
 
 enable_susfs
+set_localversion
 build_kernel
 
 if [ -z "$RECOVERY" ]; then
