@@ -8,8 +8,7 @@ zip/
 prebuilts/vendor_boot_unpack/.gradle/
 
 # Ignore prebuilts
-kernel_platform/prebuilts/
-kernel_platform/prebuilts-master/
+kernel_platform/prebuilts/clang/
 
 # Ignore files not needed to be committed
 exports.txt
