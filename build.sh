@@ -172,17 +172,21 @@ if [ ! -d "$PREBUILTS_DIR" ]; then
     echo "Cleaning up..."
 fi
 
+export RECOVERY_OPTION
+export DS_OPTION
+export SUSFS_OPTION
+
 if [[ "$RECOVERY_OPTION" == "y" ]]; then
-    RECOVERY=recovery_defconfig
-    SUSFS_OPTION=n
+    export RECOVERY=recovery_defconfig
+    export SUSFS_OPTION=n
 fi
 
 if [[ "$DS_OPTION" == "y" ]]; then
-    DS=droidspaces_defconfig
+    export DS=droidspaces_defconfig
 fi
 
 if [[ "$SUSFS_OPTION" == "y" ]]; then
-    SUSFS=susfs_defconfig
+    export SUSFS=susfs_defconfig
 fi
 
 if [ ! -d "${ANDROID_BUILD_TOP}/zip" ]; then
