@@ -164,19 +164,22 @@ export KBUILD_EXT_MODULES="../vendor/qcom/opensource/wlan/qcacld-3.0 \
     ../vendor/qcom/opensource/camera-kernel \
     ../vendor/qcom/opensource/display-drivers/msm"
 
-# Define prebuilts variables
-PREBUILTS_DIR=${ANDROID_BUILD_TOP}/kernel_platform/prebuilts
-TOOLCHAIN_URL="https://github.com/xfwdrev/samsung_prebuilts_toolchain/releases/download/clang22/toolchain.tar.gz"
-TOOLCHAIN_FILE=$(basename "$TOOLCHAIN_URL")
+# Define toolchain variables
+CLANG_DIR=${ANDROID_BUILD_TOP}/kernel_platform/prebuilts/clang/host/linux-x86/clang-r596125
 
-# Check if prebuilts exists
-if [ ! -d "$PREBUILTS_DIR" ]; then
+# Check if toolchain exists
+if [ ! -f "$CLANG_DIR/bin/clang-22" ]; then
     echo "-----------------------------------------------"
-    echo "Prebuilts not found! Downloading..."
+    echo "Toolchain not found! Downloading..."
     echo "-----------------------------------------------"
-    wget -q --show-progress --progress=dot:giga -O "$TOOLCHAIN_FILE" "$TOOLCHAIN_URL"
-    tar -xzf "$TOOLCHAIN_FILE" -C kernel_platform && rm "$TOOLCHAIN_FILE"
+    rm -rf $CLANG_DIR
+    mkdir -p $CLANG_DIR
+    pushd $CLANG_DIR > /dev/null
+    curl -LJOk https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/mirror-goog-main-llvm-toolchain-source/clang-r596125.tar.gz
+    tar xf mirror-goog-main-llvm-toolchain-source-clang-r596125.tar.gz
+    rm mirror-goog-main-llvm-toolchain-source-clang-r596125.tar.gz
     echo "Cleaning up..."
+    popd > /dev/null
 fi
 
 export RECOVERY_OPTION
