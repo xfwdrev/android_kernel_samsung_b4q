@@ -71,6 +71,13 @@ enable_susfs() {
         }
 }
 
+update_submodules() {
+
+    echo "Updating submodules..."
+    git submodule update --init --recursive --remote || exit 1
+
+}
+
 echo "Preparing the build environment..."
 
 pushd $(dirname "$0") > /dev/null
@@ -340,6 +347,7 @@ build_zip() {
 
 BUILD_START=$(date +%s)
 
+update_submodules
 enable_susfs
 set_localversion
 build_kernel
