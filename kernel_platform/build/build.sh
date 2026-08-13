@@ -822,11 +822,29 @@ if [ "${SKIP_DEFCONFIG}" != "1" ] ; then
   fi
 fi
 
-    # Custom Defconfig
-    echo "========================================================"
-    echo " Merging custom defconfig with .config"
-    (cd ${OUT_DIR} && ${MERGE_CONFIG} -m .config ${ANDROID_BUILD_TOP}/${CUST_DEFCONFIG})
-    (cd ${OUT_DIR} && make O=${OUT_DIR} ${TOOL_ARGS} olddefconfig)
+# Custom Defconfigs
+echo "========================================================"
+echo " Merging custom defconfigs with .config"
+
+CONFIGS=("${CUST_DEFCONFIG}")
+
+[[ "${DS_OPTION}" == "y" ]] && CONFIGS+=("custom_defconfigs/${DS}")
+[[ "${SUSFS_OPTION}" == "y" ]] && CONFIGS+=("custom_defconfigs/${SUSFS}")
+[[ "${RECOVERY_OPTION}" == "y" ]] && CONFIGS+=("custom_defconfigs/${RECOVERY}")
+
+for config in "${CONFIGS[@]}"; do
+    CONFIG_PATH="${ANDROID_BUILD_TOP}/${config}"
+
+    if [[ -f "${CONFIG_PATH}" ]]; then
+        echo " Merging defconfig: ${config}"
+        (cd "${OUT_DIR}" && ${MERGE_CONFIG} -m .config "${CONFIG_PATH}") || exit 1
+    else
+        echo " WARNING: Defconfig not found: ${CONFIG_PATH}"
+        exit 1
+    fi
+done
+
+(cd "${OUT_DIR}" && make O="${OUT_DIR}" ${TOOL_ARGS} olddefconfig)
 
 if [ "${LTO}" = "none" -o "${LTO}" = "thin" -o "${LTO}" = "full" ]; then
   echo "========================================================"
