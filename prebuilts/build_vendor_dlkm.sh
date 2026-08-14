@@ -66,7 +66,7 @@ replace_config_values() {
 build_vendor_dlkm() {
     cd "${AIT_DIR}" && \
         sudo ./android_image_tools.sh --conf=${AIT_DIR}/CONFIGS/vendor_dlkm_repack.conf && \
-        mv "${AIT_DIR}/REPACKED_IMAGES/vendor_dlkm_repacked.img" "${REPO_ROOT}/external/AnyKernel3/vendor_dlkm.img" && \
+        mv "${AIT_DIR}/REPACKED_IMAGES/vendor_dlkm_repacked.img" "${REPO_ROOT}/release/vendor_dlkm.img" && \
         rm -rf ${OUTPUT_DIR} && \
         cd "${REPO_ROOT}"
 }

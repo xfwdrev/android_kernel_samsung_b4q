@@ -18,7 +18,8 @@ Usage: $(basename "$0") [options]
 Options
     -d, --droidspaces [y/N]        Include Droidspaces support
     -s, --susfs [y/N]              Include SuSFS
-    -r, --recovery [y/N]           Compile kernel for an Android Recovery																 
+    -r, --recovery [y/N]           Compile kernel for an Android Recovery
+    -o, --odin [y/N]               Compile images flashable via Odin
 EOF
 }
 
@@ -34,6 +35,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --recovery|-r)
             RECOVERY_OPTION="$2"
+            shift 2
+            ;;
+        --odin|-o)
+            ODIN_OPTION="$2"
             shift 2
             ;;
         *)\
@@ -164,6 +169,13 @@ export KBUILD_EXT_MODULES="../vendor/qcom/opensource/wlan/qcacld-3.0 \
     ../vendor/qcom/opensource/camera-kernel \
     ../vendor/qcom/opensource/display-drivers/msm"
 
+export MKBOOTIMG_EXTRA_ARGS="
+    --header_version 4 \
+    --os_version 12.0.0 \
+    --os_patch_level 2026-07 \
+    --pagesize 4096 \
+"
+
 # Define toolchain variables
 CLANG_DIR=${ANDROID_BUILD_TOP}/kernel_platform/prebuilts/clang/host/linux-x86/clang-r596125
 
@@ -191,6 +203,10 @@ if [[ "$RECOVERY_OPTION" == "y" ]]; then
     export SUSFS_OPTION=n
 fi
 
+if [[ "$ODIN_OPTION" == "y" ]]; then
+    ODIN=y
+fi
+
 if [[ "$DS_OPTION" == "y" ]]; then
     export DS=droidspaces_defconfig
 fi
@@ -199,8 +215,10 @@ if [[ "$SUSFS_OPTION" == "y" ]]; then
     export SUSFS=susfs_defconfig
 fi
 
-if [ ! -d "${ANDROID_BUILD_TOP}/zip" ]; then
-    mkdir -p "${ANDROID_BUILD_TOP}/zip"
+if [ ! -d "${ANDROID_BUILD_TOP}/release" ]; then
+    mkdir -p "${ANDROID_BUILD_TOP}/release"
+    mkdir -p "${ANDROID_BUILD_TOP}/release/zip"
+    mkdir -p "${ANDROID_BUILD_TOP}/release/tar"
 fi
 
 set_localversion() {
@@ -248,6 +266,10 @@ get_common_build_options() {
     KMI_SYMBOL_LIST_STRICT_MODE=0 \
     RECOMPILE_KERNEL=1 \
     ABI_DEFINITION= \
+    BUILD_BOOT_IMG=1 \
+    SKIP_VENDOR_BOOT=1 \
+    MKBOOTIMG_PATH=${ANDROID_BUILD_TOP}/kernel_platform/tools/mkbootimg/mkbootimg.py \
+    BOOT_IMAGE_HEADER_VERSION=4 \
     KERNEL_BINARY=Image \
     "
 }
@@ -272,9 +294,14 @@ build_kernel() {
     else
         echo "Recovery: Y"
     fi
+    if [ -z "$ODIN" ]; then
+    echo "ODIN: N"
+    else
+        echo "ODIN: Y"
+    fi
     
     COMMON_OPTIONS=$(get_common_build_options)
-    export GKI_KERNEL_BUILD_OPTIONS="${COMMON_OPTIONS} SKIP_VENDOR_BOOT=1"
+    export GKI_KERNEL_BUILD_OPTIONS="${COMMON_OPTIONS}"
     COMMON_CONFIG="${CUST_DEFCONFIG}"
 
     if [ -f "${COMMON_CONFIG}" ]; then
@@ -301,7 +328,11 @@ build_kernel() {
         
     echo "Building kernel..."
     echo "-----------------------------------------------"
-    env ${GKI_KERNEL_BUILD_OPTIONS} ${ANDROID_BUILD_TOP}/kernel_platform/build/android/prepare_vendor.sh sec ${TARGET_PRODUCT} || abort
+    if [[ "$ODIN_OPTION" == "y" ]]; then
+        env ${GKI_KERNEL_BUILD_OPTIONS} GKI_RAMDISK_PREBUILT_BINARY=${ANDROID_BUILD_TOP}/stock/ramdisk/ramdisk.lz4 ${ANDROID_BUILD_TOP}/kernel_platform/build/android/prepare_vendor.sh sec ${TARGET_PRODUCT} || abort
+    else
+        env ${GKI_KERNEL_BUILD_OPTIONS} ${ANDROID_BUILD_TOP}/kernel_platform/build/android/prepare_vendor.sh sec ${TARGET_PRODUCT} || abort
+    fi
 }
 
 build_zip() {
@@ -325,10 +356,12 @@ build_zip() {
     mv ${DIST_DIR}/wlan.ko ${DIST_DIR}/qca_cld3_wlan.ko
 
     echo "Building vendor_boot.img"
-    SCRIPT_DIR="${SCRIPT_DIR}" "${SCRIPT_DIR}/prebuilts/build_vendor_boot.sh" || exit 1
+    SCRIPT_DIR="${SCRIPT_DIR}" "${SCRIPT_DIR}/prebuilts/build_vendor_boot.sh" || abort
+    mv ${ANDROID_BUILD_TOP}/release/vendor_boot.img ${ANDROID_BUILD_TOP}/external/AnyKernel3/vendor_boot.img
 
     echo "Building vendor_dlkm.img"
-    SCRIPT_DIR="${SCRIPT_DIR}" "${SCRIPT_DIR}/prebuilts/build_vendor_dlkm.sh" || exit 1
+    SCRIPT_DIR="${SCRIPT_DIR}" "${SCRIPT_DIR}/prebuilts/build_vendor_dlkm.sh" || abort
+    mv ${ANDROID_BUILD_TOP}/release/vendor_dlkm.img ${ANDROID_BUILD_TOP}/external/AnyKernel3/vendor_dlkm.img
 
     echo "Packing images with AnyKernel3"
 
@@ -344,7 +377,48 @@ build_zip() {
         ZIPNAME="${version}${KVER}_${MODEL}_KSUN_OFFICIAL_${DATE}-$(git rev-parse --short=8 HEAD).zip"
     fi
 
-    zip -r9 "${ANDROID_BUILD_TOP}/zip/${ZIPNAME}" * -x ".git*" "README.md" "*placeholder" || abort
+    zip -r9 "${ANDROID_BUILD_TOP}/release/zip/${ZIPNAME}" * -x ".git*" "README.md" "*placeholder" || abort
+    popd > /dev/null
+}
+
+build_tar() {
+    echo "-----------------------------------------------"
+    echo "Building Odin Flashable tar..."
+    echo "-----------------------------------------------"
+
+    echo "Cleanup old images"
+    if [ -f "${ANDROID_BUILD_TOP}/release/tar/boot.img" ]; then
+        rm -f \
+            "${ANDROID_BUILD_TOP}/release/tar/boot.img" \
+            "${ANDROID_BUILD_TOP}/release/tar/vendor_boot.img"
+    fi
+
+    echo "Copying boot image"
+    cp ${ANDROID_BUILD_TOP}/out/msm-${CHIPSET_NAME}-${CHIPSET_NAME}-${TARGET_PRODUCT}/dist/boot.img ${ANDROID_BUILD_TOP}/release/tar/boot.img
+
+    chmod -R +x prebuilts/
+
+    mv ${DIST_DIR}/wlan.ko ${DIST_DIR}/qca_cld3_wlan.ko
+
+    echo "Building vendor_boot.img"
+    SCRIPT_DIR="${SCRIPT_DIR}" "${SCRIPT_DIR}/prebuilts/build_vendor_boot.sh" || abort
+
+    mv ${ANDROID_BUILD_TOP}/release/vendor_boot.img ${ANDROID_BUILD_TOP}/release/tar/vendor_boot.img
+
+    echo "Compressing images"
+    pushd "${ANDROID_BUILD_TOP}/release/tar" > /dev/null
+
+    version=$(grep '^CONFIG_LOCALVERSION=' "${ANDROID_BUILD_TOP}/${CUST_DEFCONFIG}" | cut -d'"' -f2 | sed 's/-'"${MODEL}"'.*//')
+    version=${version:1}
+    DATE=`date +"%d-%m-%Y_%H-%M-%S"`
+
+    if [[ "$SUSFS_OPTION" == "y" ]]; then
+        TARNAME="${version}${KVER}_${MODEL}_SUSFS_OFFICIAL_${DATE}-$(git rev-parse --short=8 HEAD).tar"
+    else
+        TARNAME="${version}${KVER}_${MODEL}_KSUN_OFFICIAL_${DATE}-$(git rev-parse --short=8 HEAD).tar"
+    fi
+
+    tar -cvf "${TARNAME}" boot.img vendor_boot.img || abort
     popd > /dev/null
 }
 
@@ -355,8 +429,12 @@ enable_susfs
 set_localversion
 build_kernel
 
-if [ -z "$RECOVERY" ]; then
+if [ -z "$RECOVERY" || -z "$ODIN" ]; then
 build_zip
+fi
+
+if [[ "$ODIN_OPTION" == "y" ]]; then
+build_tar
 fi
 
 echo "-----------------------------------------------"

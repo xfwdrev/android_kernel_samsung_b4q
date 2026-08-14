@@ -42,7 +42,7 @@ unpack_vendor_boot() {
 build_vendor_boot() {
     cd "${BOOT_EDITOR_DIR}" && \
         ./gradlew pack && \
-        mv vendor_boot.img "${REPO_ROOT}/external/AnyKernel3/vendor_boot.img" && \
+        mv vendor_boot.img "${REPO_ROOT}/release/vendor_boot.img" && \
         cd "${REPO_ROOT}"
         rm -rf "${BOOT_EDITOR_DIR}/build"
 }
