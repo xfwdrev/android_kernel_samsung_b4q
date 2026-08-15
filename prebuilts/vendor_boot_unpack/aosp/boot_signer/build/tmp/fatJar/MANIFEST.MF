@@ -1,4 +1,0 @@
-Manifest-Version: 1.0
-Implementation-Title: AOSP boot signer
-Main-Class: com.android.verity.BootSignature
-
