@@ -1,11 +1,13 @@
 # Ignore build folders created
 device/
 out/
-zip/
+release/
 
 # Ignore directories
 .ccache/
 prebuilts/vendor_boot_unpack/.gradle/
+prebuilts/vendor_boot_unpack/**/build/
+prebuilts/vendor_dlkm_unpack/.tmp/
 
 # Ignore prebuilts
 kernel_platform/prebuilts/clang/
