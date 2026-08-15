@@ -17,6 +17,7 @@ unset_flags()
 Usage: $(basename "$0") [options]
 Options
     -d, --droidspaces [y/N]        Include Droidspaces support
+    -k, --ksu [y/N]                Include KernelSU
     -s, --susfs [y/N]              Include SuSFS
     -r, --recovery [y/N]           Compile kernel for an Android Recovery
     -o, --odin [y/N]               Compile images flashable via Odin
@@ -27,6 +28,10 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         --droidspaces|-d)
             DS_OPTION="$2"
+            shift 2
+            ;;
+        --ksu|-k)
+            KSU_OPTION="$2"
             shift 2
             ;;
         --susfs|-s)
@@ -68,12 +73,12 @@ enable_susfs() {
         return
     fi
 
-        echo "Applying SuSFS patch..."
+    echo "Applying SuSFS patch..."
 
-        patch -d "${KSUN_DIR}" -p1 < "${PATCH_FILE}" || {
-            echo "Failed to apply patch!"
-            exit 1
-        }
+    patch -d "${KSUN_DIR}" -p1 < "${PATCH_FILE}" || {
+        echo "Failed to apply patch!"
+        exit 1
+    }
 }
 
 update_submodules() {
@@ -196,11 +201,13 @@ fi
 
 export RECOVERY_OPTION
 export DS_OPTION
+export KSU_OPTION
 export SUSFS_OPTION
 
 if [[ "$RECOVERY_OPTION" == "y" ]]; then
     export RECOVERY=recovery_defconfig
     export SUSFS_OPTION=n
+    export KSU_OPTION=n
 fi
 
 if [[ "$ODIN_OPTION" == "y" ]]; then
@@ -209,6 +216,10 @@ fi
 
 if [[ "$DS_OPTION" == "y" ]]; then
     export DS=droidspaces_defconfig
+fi
+
+if [[ "$KSU_OPTION" == "y" ]]; then
+    export KSU=ksu_defconfig
 fi
 
 if [[ "$SUSFS_OPTION" == "y" ]]; then
@@ -243,7 +254,7 @@ set_localversion() {
 
     if [[ "$RECOVERY_OPTION" == "y" ]]; then
         LV_SUFFIX="-TWRP"
-    elif [[ "$SUSFS_OPTION" == "y" ]]; then
+    elif [[ "$KSU_OPTION" == "y" && "$SUSFS_OPTION" == "y" ]]; then
         LV_SUFFIX="-KSUN-SUSFS"
     else
         LV_SUFFIX="-KSUN"
@@ -279,6 +290,11 @@ build_kernel() {
     echo "-----------------------------------------------"
     echo "Defconfig: "$CUST_DEFCONFIG""
 
+    if [ -z "$KSU" ]; then
+        echo "KSU: N"
+    else
+        echo "KSU: $KSU"
+    fi
     if [ -z "$SUSFS" ]; then
         echo "SUSFS: N"
     else
@@ -290,12 +306,12 @@ build_kernel() {
         echo "Droidspaces: $DS"
     fi
     if [ -z "$RECOVERY" ]; then
-    echo "Recovery: N"
+        echo "Recovery: N"
     else
         echo "Recovery: Y"
     fi
     if [ -z "$ODIN" ]; then
-    echo "ODIN: N"
+        echo "ODIN: N"
     else
         echo "ODIN: Y"
     fi
@@ -316,6 +332,11 @@ build_kernel() {
         if [[ "$DS_OPTION" == "y" ]]; then
             echo "Merging DroidSpaces config: ${DS}"
             export POST_DEFCONFIG_CMDS="${POST_DEFCONFIG_CMDS} && ${MERGE_CONFIG} -m \${OUT_DIR}/gki_kernel/common/.config ${ANDROID_BUILD_TOP}/custom_defconfigs/${DS}"
+        fi
+
+        if [[ "$KSU_OPTION" == "y" ]]; then
+            echo "Merging KSU config: ${KSU}"
+            export POST_DEFCONFIG_CMDS="${POST_DEFCONFIG_CMDS} && ${MERGE_CONFIG} -m \${OUT_DIR}/gki_kernel/common/.config ${ANDROID_BUILD_TOP}/custom_defconfigs/${KSU}"
         fi
 
         if [[ "$SUSFS_OPTION" == "y" ]]; then
@@ -372,7 +393,7 @@ build_zip() {
     DATE=`date +"%d-%m-%Y_%H-%M-%S"`
 
     if [[ "$SUSFS_OPTION" == "y" ]]; then
-        ZIPNAME="${version}${KVER}_${MODEL}_SUSFS_OFFICIAL_${DATE}-$(git rev-parse --short=8 HEAD).zip"
+        ZIPNAME="${version}${KVER}_${MODEL}_KSUN_SUSFS_OFFICIAL_${DATE}-$(git rev-parse --short=8 HEAD).zip"
     else
         ZIPNAME="${version}${KVER}_${MODEL}_KSUN_OFFICIAL_${DATE}-$(git rev-parse --short=8 HEAD).zip"
     fi
@@ -413,7 +434,7 @@ build_tar() {
     DATE=`date +"%d-%m-%Y_%H-%M-%S"`
 
     if [[ "$SUSFS_OPTION" == "y" ]]; then
-        TARNAME="${version}${KVER}_${MODEL}_SUSFS_OFFICIAL_${DATE}-$(git rev-parse --short=8 HEAD).tar"
+        TARNAME="${version}${KVER}_${MODEL}_KSUN_SUSFS_OFFICIAL_${DATE}-$(git rev-parse --short=8 HEAD).tar"
     else
         TARNAME="${version}${KVER}_${MODEL}_KSUN_OFFICIAL_${DATE}-$(git rev-parse --short=8 HEAD).tar"
     fi

@@ -829,6 +829,7 @@ echo " Merging custom defconfigs with .config"
 CONFIGS=("${CUST_DEFCONFIG}")
 
 [[ "${DS_OPTION}" == "y" ]] && CONFIGS+=("custom_defconfigs/${DS}")
+[[ "${KSU_OPTION}" == "y" ]] && CONFIGS+=("custom_defconfigs/${KSU}")
 [[ "${SUSFS_OPTION}" == "y" ]] && CONFIGS+=("custom_defconfigs/${SUSFS}")
 [[ "${RECOVERY_OPTION}" == "y" ]] && CONFIGS+=("custom_defconfigs/${RECOVERY}")
 
