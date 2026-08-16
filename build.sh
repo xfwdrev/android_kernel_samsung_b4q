@@ -167,12 +167,12 @@ export KBUILD_EXT_MODULES="../vendor/qcom/opensource/wlan/qcacld-3.0 \
     ../vendor/qcom/opensource/datarmnet-ext/perf \
     ../vendor/qcom/opensource/datarmnet-ext/perf_tether \
     ../vendor/qcom/opensource/datarmnet-ext/wlan \
-    ../vendor/qcom/opensource/video-driver \
-    ../vendor/qcom/opensource/eva-kernel \
     ../vendor/qcom/opensource/mmrm-driver \
     ../vendor/qcom/opensource/audio-kernel \
     ../vendor/qcom/opensource/camera-kernel \
-    ../vendor/qcom/opensource/display-drivers/msm"
+    ../vendor/qcom/opensource/display-drivers/msm \
+    ../vendor/qcom/opensource/eva-kernel \
+    ../vendor/qcom/opensource/video-driver"
 
 export MKBOOTIMG_EXTRA_ARGS="
     --header_version 4 \
@@ -450,7 +450,7 @@ enable_susfs
 set_localversion
 build_kernel
 
-if [ -z "$RECOVERY" || -z "$ODIN" ]; then
+if [[ -z "$RECOVERY" || -z "$ODIN" ]]; then
 build_zip
 fi
 
