@@ -690,7 +690,7 @@ EXPORT_SYMBOL(cam_subdev_notify_message);
 
 
 static int cam_req_mgr_ordered_list_cmp(void *priv,
-	struct list_head *head_1, struct list_head *head_2)
+	const struct list_head *head_1, const struct list_head *head_2)
 {
 	struct cam_subdev *entry_1 =
 		list_entry(head_1, struct cam_subdev, list);
