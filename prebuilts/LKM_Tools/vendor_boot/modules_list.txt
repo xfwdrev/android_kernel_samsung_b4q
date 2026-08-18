@@ -117,7 +117,6 @@ if_cb_manager.ko
 input_booster_lkm.ko
 iommu-logger.ko
 ipa_fmwk.ko
-kryo_arm64_edac.ko
 lcd.ko
 leds-aw36518.ko
 leds-qpnp-vibrator-ldo.ko
@@ -139,7 +138,6 @@ mem-hooks.ko
 mem_buf.ko
 mem_buf_dev.ko
 memlat.ko
-memory_dump_v2.ko
 mfd_max77705.ko
 mfd_s2mpb02.ko
 mhi.ko
@@ -232,7 +230,6 @@ qcom_aoss.ko
 qcom_cpu_vendor_hooks.ko
 qcom_cpuss_sleep_stats.ko
 qcom_dma_heaps.ko
-qcom_edac.ko
 qcom_esoc.ko
 qcom_gic_intr_routing.ko
 qcom_glink.ko

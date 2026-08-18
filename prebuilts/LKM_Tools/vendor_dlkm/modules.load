@@ -160,7 +160,6 @@ bcm4389.ko
 bluesleep.ko
 btpower.ko
 bt_fm_slim.ko
-qcom_edac.ko
 cpufreq_limit.ko
 qcom-cpufreq-hw-debug.ko
 qcom_lpm.ko

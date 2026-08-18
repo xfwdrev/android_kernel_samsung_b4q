@@ -180,7 +180,6 @@ qcom-i2c-pmic.ko
 qcom-pon.ko
 qcom-spmi-temp-alarm.ko
 qcom_cpuss_sleep_stats.ko
-qcom_edac.ko
 qcom_esoc.ko
 qcom_glink.ko
 qcom_glink_smem.ko
