@@ -21,6 +21,7 @@ Options
     -s, --susfs [y/N]              Include SuSFS
     -r, --recovery [y/N]           Compile kernel for an Android Recovery
     -o, --odin [y/N]               Compile images flashable via Odin
+    -c, --clean                    Clean build
 EOF
 }
 
@@ -45,6 +46,10 @@ while [[ $# -gt 0 ]]; do
         --odin|-o)
             ODIN_OPTION="$2"
             shift 2
+            ;;
+        --clean|-c)
+            CLEAN_OPTION="y"
+            shift
             ;;
         *)\
             unset_flags
@@ -444,6 +449,24 @@ build_tar() {
 }
 
 BUILD_START=$(date +%s)
+
+if [[ "$CLEAN_OPTION" == "y" ]]; then
+    echo "-----------------------------------------------"
+    echo "Cleaning up build environment..."
+    echo "-----------------------------------------------"
+    echo "Deleting out folder"
+    echo "-----------------------------------------------"
+    rm -rf "${ANDROID_BUILD_TOP}/out"
+    echo "Deleting device folder"
+    echo "-----------------------------------------------"
+    rm -rf "${ANDROID_BUILD_TOP}/device"
+    echo "Deleting builds in releases folder"
+    echo "-----------------------------------------------"
+    rm -f "${ANDROID_BUILD_TOP}/release/tar/"*
+    rm -f "${ANDROID_BUILD_TOP}/release/zip/"*
+
+    exit 0
+fi
 
 update_submodules
 enable_susfs
