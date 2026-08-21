@@ -16,6 +16,7 @@ unset_flags()
     cat << EOF
 Usage: $(basename "$0") [options]
 Options
+    -m, --model [value]            Specify the region code of the phone
     -d, --droidspaces [y/N]        Include Droidspaces support
     -k, --ksu [y/N]                Include KernelSU
     -s, --susfs [y/N]              Include SuSFS
@@ -27,6 +28,10 @@ EOF
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
+        --model|-m)
+            MODEL="$2"
+            shift 2
+            ;;
         --droidspaces|-d)
             DS_OPTION="$2"
             shift 2
@@ -108,7 +113,28 @@ fi
 
 echo "${BUILD_VERSION}" > "${VERSION_FILE}"
 
-BUILD_TARGET=b4q_eur_openx
+# Define specific variables
+case $MODEL in
+eur)
+    BUILD_TARGET=b4q_eur_openx
+;;
+kor)
+    BUILD_TARGET=b4q_kor_singlex
+;;
+jpr)
+    BUILD_TARGET=b4q_jpn_rktw
+;;
+jpd)
+    BUILD_TARGET=b4q_jpn_dcmw
+;;
+jpk)
+    BUILD_TARGET=b4q_jpn_kdiw
+;;
+*)
+    unset_flags
+    exit
+esac
+
 export MODEL=$(echo $BUILD_TARGET | cut -d'_' -f1)
 export PROJECT_NAME=${MODEL}
 export REGION=$(echo $BUILD_TARGET | cut -d'_' -f2)
