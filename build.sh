@@ -213,19 +213,56 @@ export MKBOOTIMG_EXTRA_ARGS="
 "
 
 # Define toolchain variables
-CLANG_DIR=${ANDROID_BUILD_TOP}/kernel_platform/prebuilts/clang/host/linux-x86/clang-r596125
+CLANG_DIR=${ANDROID_BUILD_TOP}/kernel_platform/prebuilts/clang/host/linux-x86/clang-r614150
+CLANG_VERSION="${CLANG_DIR##*-}"
+
+for config in \
+    "${ANDROID_BUILD_TOP}/kernel_platform/common/build.config.constants" \
+    "${ANDROID_BUILD_TOP}/kernel_platform/msm-kernel/build.config.constants"
+do
+    if [ -f "$config" ]; then
+        CURRENT=$(grep '^CLANG_VERSION=' "$config" | cut -d= -f2)
+
+        if [ "$CURRENT" != "$CLANG_VERSION" ]; then
+            echo "Updating $(basename "$config"): $CURRENT -> $CLANG_VERSION"
+            sed -i "s/^CLANG_VERSION=.*/CLANG_VERSION=${CLANG_VERSION}/" "$config"
+        else
+            echo "$(basename "$config"): CLANG_VERSION=${CLANG_VERSION} (already up to date)"
+        fi
+    fi
+done
+
+# Update STRIP_TOOL in vendor boot/dlkm scripts
+for script in \
+    "${ANDROID_BUILD_TOP}/prebuilts/build_vendor_boot.sh" \
+    "${ANDROID_BUILD_TOP}/prebuilts/build_vendor_dlkm.sh"
+do
+    if [ -f "$script" ]; then
+        CURRENT=$(grep '^STRIP_TOOL=' "$script" | sed 's/.*clang-\([^/]*\).*/\1/')
+
+        if [ "$CURRENT" != "$CLANG_VERSION" ]; then
+            echo "Updating $(basename "$script"): clang-${CURRENT} -> clang-${CLANG_VERSION}"
+
+            sed -i \
+                "s|^STRIP_TOOL=.*|STRIP_TOOL=\"\${REPO_ROOT}/kernel_platform/prebuilts/clang/host/linux-x86/clang-${CLANG_VERSION}/bin/llvm-strip\"|" \
+                "$script"
+        else
+            echo "$(basename "$script"): STRIP_TOOL already uses clang-${CLANG_VERSION}"
+        fi
+    fi
+done
 
 # Check if toolchain exists
-if [ ! -f "$CLANG_DIR/bin/clang-22" ]; then
+if [ ! -f "$CLANG_DIR/bin/clang-23" ]; then
     echo "-----------------------------------------------"
     echo "Toolchain not found! Downloading..."
     echo "-----------------------------------------------"
     rm -rf $CLANG_DIR
     mkdir -p $CLANG_DIR
     pushd $CLANG_DIR > /dev/null
-    curl -LJOk https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/mirror-goog-main-llvm-toolchain-source/clang-r596125.tar.gz
-    tar xf mirror-goog-main-llvm-toolchain-source-clang-r596125.tar.gz
-    rm mirror-goog-main-llvm-toolchain-source-clang-r596125.tar.gz
+    curl -LJOk https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/mirror-goog-main-llvm-toolchain-source/clang-r614150.tar.gz
+    tar xf mirror-goog-main-llvm-toolchain-source-clang-r614150.tar.gz
+    rm mirror-goog-main-llvm-toolchain-source-clang-r614150.tar.gz
     echo "Cleaning up..."
     popd > /dev/null
 fi
