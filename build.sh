@@ -92,10 +92,19 @@ enable_susfs() {
 }
 
 update_submodules() {
-
     echo "Updating submodules..."
-    git submodule update --init --recursive --remote || exit 1
 
+    git submodule update --init --remote kernel_platform/common || exit 1
+
+    cd kernel_platform/common || exit 1
+
+    if [ ! -d "KernelSU-Next/.git" ]; then
+        git submodule update --init KernelSU-Next || exit 1
+    fi
+
+    cd ../.. || exit 1
+
+    git submodule update --init --remote kernel_platform/msm-kernel || exit 1
 }
 
 echo "Preparing the build environment..."
