@@ -468,11 +468,12 @@ build_zip() {
     version=$(grep '^CONFIG_LOCALVERSION=' "${ANDROID_BUILD_TOP}/${CUST_DEFCONFIG}" | cut -d'"' -f2 | sed 's/-'"${MODEL}"'.*//')
     version=${version:1}
     DATE=`date +"%d-%m-%Y_%H-%M-%S"`
+    PARSE_LATEST=$(git -C "${ANDROID_BUILD_TOP}" rev-parse --short=8 HEAD)
 
     if [[ "$SUSFS_OPTION" == "y" ]]; then
-        ZIPNAME="${version}${KVER}_${MODEL}_KSUN_SUSFS_OFFICIAL_${DATE}-$(git rev-parse --short=8 HEAD).zip"
+        ZIPNAME="${version}${KVER}_${MODEL}_KSUN_SUSFS_OFFICIAL_${DATE}-${PARSE_LATEST}.zip"
     else
-        ZIPNAME="${version}${KVER}_${MODEL}_KSUN_OFFICIAL_${DATE}-$(git rev-parse --short=8 HEAD).zip"
+        ZIPNAME="${version}${KVER}_${MODEL}_KSUN_OFFICIAL_${DATE}-${PARSE_LATEST}.zip"
     fi
 
     zip -r9 "${ANDROID_BUILD_TOP}/release/zip/${ZIPNAME}" * -x ".git*" "README.md" "*placeholder" || abort
@@ -509,11 +510,12 @@ build_tar() {
     version=$(grep '^CONFIG_LOCALVERSION=' "${ANDROID_BUILD_TOP}/${CUST_DEFCONFIG}" | cut -d'"' -f2 | sed 's/-'"${MODEL}"'.*//')
     version=${version:1}
     DATE=`date +"%d-%m-%Y_%H-%M-%S"`
+    PARSE_LATEST=$(git -C "${ANDROID_BUILD_TOP}" rev-parse --short=8 HEAD)
 
     if [[ "$SUSFS_OPTION" == "y" ]]; then
-        TARNAME="${version}${KVER}_${MODEL}_KSUN_SUSFS_OFFICIAL_${DATE}-$(git rev-parse --short=8 HEAD).tar"
+        TARNAME="${version}${KVER}_${MODEL}_KSUN_SUSFS_OFFICIAL_${DATE}-${PARSE_LATEST}.tar"
     else
-        TARNAME="${version}${KVER}_${MODEL}_KSUN_OFFICIAL_${DATE}-$(git rev-parse --short=8 HEAD).tar"
+        TARNAME="${version}${KVER}_${MODEL}_KSUN_OFFICIAL_${DATE}-${PARSE_LATEST}.tar"
     fi
 
     tar -cvf "${TARNAME}" boot.img vendor_boot.img || abort
@@ -545,7 +547,7 @@ enable_susfs
 set_localversion
 build_kernel
 
-if [[ -z "$RECOVERY" || -z "$ODIN" ]]; then
+if [[ "$RECOVERY_OPTION" != "y" || "$ODIN_OPTION" != "y" ]]; then
 build_zip
 fi
 
