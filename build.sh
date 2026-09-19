@@ -66,7 +66,7 @@ done
 enable_susfs() {
     COMMON_DIR="${ANDROID_BUILD_TOP}/kernel_platform/common"
     KSUN_DIR="${COMMON_DIR}/KernelSU-Next"
-    PATCH_FILE="${ANDROID_BUILD_TOP}/patches/0001-Enable-SuSFS-2.2.0-KSU-Next.patch"
+    PATCH_FILE="${ANDROID_BUILD_TOP}/patches/susfs.patch"
     SUS_MARKER="config KSU_SUSFS"
 
     if [ ! -f "${PATCH_FILE}" ]; then
