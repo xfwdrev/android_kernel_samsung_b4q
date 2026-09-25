@@ -1,0 +1,23 @@
+# ChicletKernel config file for building recovery kernel
+# This file gets merged with the device-specific defconfig on kernel compilation
+# Kernel defconfigs are left stock with minimal edits while this file includes all of the major modifications done to the kernel config
+
+# Set custom kernel version
+# CONFIG_F2FS_REPORT_FAKE_KERNEL_VERSION is not set
+
+# Set SELinux to permissive mode and disable auditing
+# CONFIG_SECURITY_SELINUX_ALWAYS_ENFORCE is not set
+CONFIG_SECURITY_SELINUX_ALWAYS_PERMISSIVE=y
+# CONFIG_AUDIT is not set
+
+# Disable KSU
+# CONFIG_KSU is not set
+
+CONFIG_DISABLE_LOCKSCREEN_USB_RESTRICTION=y
+
+CONFIG_MODULE_FORCE_LOAD=y
+CONFIG_MODULE_FORCE_UNLOAD=y
+# CONFIG_SIGNATURE is not set
+# CONFIG_MODULE_SIG is not set
+
+# EOF

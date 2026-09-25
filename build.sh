@@ -522,6 +522,31 @@ build_tar() {
     popd > /dev/null
 }
 
+strip_modules() {
+
+    MODULES_LIST="${ANDROID_BUILD_TOP}/stock/recovery_module_list"
+
+    if [ ! -d "${DIST_DIR}/stripped" ]; then
+        mkdir -p ${DIST_DIR}/stripped
+    fi
+
+    echo "Copying required modules to stripped directory..."
+
+    while IFS= read -r module; do
+        [[ -z "$module" ]] && continue
+
+        if [[ -f "${DIST_DIR}/${module}" ]]; then
+            cp "${DIST_DIR}/${module}" "${DIST_DIR}/stripped/"
+        else
+            echo "WARNING: Module not found: ${module}"
+        fi
+    done < "${MODULES_LIST}"
+
+
+    echo "Stripping modules..."
+    find "${DIST_DIR}/stripped" -name "*.ko" -exec "${CLANG_DIR}/bin/llvm-strip" --strip-debug {} \;
+}
+
 BUILD_START=$(date +%s)
 
 if [[ "$CLEAN_OPTION" == "y" ]]; then
@@ -546,13 +571,16 @@ update_submodules
 enable_susfs
 set_localversion
 build_kernel
-
-if [[ "$RECOVERY_OPTION" != "y" || "$ODIN_OPTION" != "y" ]]; then
+if [[ "$RECOVERY_OPTION" != "y" && "$ODIN_OPTION" != "y" ]]; then
 build_zip
 fi
 
 if [[ "$ODIN_OPTION" == "y" ]]; then
 build_tar
+fi
+
+if [[ "$RECOVERY_OPTION" == "y" ]]; then
+strip_modules
 fi
 
 echo "-----------------------------------------------"
