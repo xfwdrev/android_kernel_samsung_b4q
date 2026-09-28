@@ -522,29 +522,77 @@ build_tar() {
     popd > /dev/null
 }
 
-strip_modules() {
-
+build_recovery_modules() {
     MODULES_LIST="${ANDROID_BUILD_TOP}/stock/recovery_module_list"
+    STRIPPED_DIR="${DIST_DIR}/stripped"
 
-    if [ ! -d "${DIST_DIR}/stripped" ]; then
-        mkdir -p ${DIST_DIR}/stripped
-    fi
+    rm -rf "${STRIPPED_DIR}"
+    mkdir -p "${STRIPPED_DIR}"
 
-    echo "Copying required modules to stripped directory..."
+    echo "-----------------------------------------------"
+    echo "Preparing recovery modules..."
+
+    KERNEL_DIR_PATH=$(find "${OUT_DIR}/staging/lib/modules" -maxdepth 1 -type d -name "5.10*") || abort
+    KERNEL_VERSION=$(basename "${KERNEL_DIR_PATH}") || abort
+
+    MODULES_DIR="${STRIPPED_DIR}/lib/modules/${KERNEL_VERSION}"
+    mkdir -p "${MODULES_DIR}"
+
+    echo "-----------------------------------------------"
+    echo "Copying required recovery modules..."
 
     while IFS= read -r module; do
         [[ -z "$module" ]] && continue
+        [[ "$module" == \#* ]] && continue
 
         if [[ -f "${DIST_DIR}/${module}" ]]; then
-            cp "${DIST_DIR}/${module}" "${DIST_DIR}/stripped/"
+            cp "${DIST_DIR}/${module}" "${MODULES_DIR}/"
         else
             echo "WARNING: Module not found: ${module}"
         fi
     done < "${MODULES_LIST}"
 
+    echo "-----------------------------------------------"
+    echo "Stripping recovery modules..."
 
-    echo "Stripping modules..."
-    find "${DIST_DIR}/stripped" -name "*.ko" -exec "${CLANG_DIR}/bin/llvm-strip" --strip-debug {} \;
+    find "${MODULES_DIR}" -type f -name "*.ko" -exec "${CLANG_DIR}/bin/llvm-strip" --strip-debug --keep-section=.ARM.attributes {} \;
+
+    echo "-----------------------------------------------"
+    echo "Generating module dependency metadata..."
+
+    depmod -a -b "${STRIPPED_DIR}" "${KERNEL_VERSION}" || abort
+
+    # Now we have to also modify modules.dep
+    # Android generates them like this
+    # kernel/drivers/thermal/qcom/sdpm_clk.ko: kernel/drivers/thermal/qcom/ddr_cdev.ko:
+    # But Samsung wants them like this
+    # /lib/modules/sdpm_clk.ko: /lib/modules/ddr_cdev.ko:
+    # So we will format it with sed
+    #
+    # Changes: We depmod with the stripped modules directory as the base, so it outputs raw
+    # sdpm_clk.ko: ddr_cdev.ko:
+    # instead so we need to append /lib/modules/ at the beginning of each module
+    sed -i -E 's#(^|: | )([^ ]*\/)?([^/ ]+\.ko)#\1/lib/modules/\3#g' "${MODULES_DIR}/modules.dep"
+
+    echo "-----------------------------------------------"
+    echo "Generating modules.load.recovery..."
+
+    : > "${MODULES_DIR}/modules.load.recovery"
+
+    while IFS= read -r module; do
+        [[ -z "$module" ]] && continue
+        [[ "$module" == \#* ]] && continue
+
+        if [[ -f "${MODULES_DIR}/${module}" ]]; then
+            echo "${module}" >> "${MODULES_DIR}/modules.load.recovery"
+        else
+            echo "WARNING: Module missing from recovery set: ${module}"
+        fi
+    done < "${MODULES_LIST}"
+
+    echo
+    echo "Generated metadata:"
+    ls -lh "${MODULES_DIR}"/modules.* 2>/dev/null
 }
 
 BUILD_START=$(date +%s)
@@ -580,7 +628,7 @@ build_tar
 fi
 
 if [[ "$RECOVERY_OPTION" == "y" ]]; then
-strip_modules
+build_recovery_modules
 fi
 
 echo "-----------------------------------------------"
