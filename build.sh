@@ -1,5 +1,5 @@
 #!/bin/bash
-KVER="-v1.1"
+KVER="-v1.2"
 RVER="-v1.1"
 
 abort()
@@ -332,12 +332,12 @@ set_localversion() {
     if [[ "$RECOVERY_OPTION" == "y" ]]; then
         LV_SUFFIX="-TWRP"
     elif [[ "$KSU_OPTION" == "y" && "$SUSFS_OPTION" == "y" ]]; then
-        LV_SUFFIX="-KSUN-SUSFS"
+        LV_SUFFIX="-SUSFS"
     else
         LV_SUFFIX="-KSUN"
     fi
 
-    UPDATED_LV="${BASE_LV}-${MODEL}${VRSN}${LV_SUFFIX}"
+    UPDATED_LV="${BASE_LV}${VRSN}${LV_SUFFIX}"
 
     sed -i \
         "s|^CONFIG_LOCALVERSION=.*|CONFIG_LOCALVERSION=\"${UPDATED_LV}\"|" \
@@ -465,7 +465,7 @@ build_zip() {
 
     pushd "${ANDROID_BUILD_TOP}/external/AnyKernel3" > /dev/null
 
-    version=$(grep '^CONFIG_LOCALVERSION=' "${ANDROID_BUILD_TOP}/${CUST_DEFCONFIG}" | cut -d'"' -f2 | sed 's/-'"${MODEL}"'.*//')
+    version=$(grep '^CONFIG_LOCALVERSION=' "${ANDROID_BUILD_TOP}/${CUST_DEFCONFIG}" | cut -d'"' -f2 | sed -E 's/^-?([^ -]+).*/\1/')
     version=${version:1}
     DATE=`date +"%d-%m-%Y_%H-%M-%S"`
     PARSE_LATEST=$(git -C "${ANDROID_BUILD_TOP}" rev-parse --short=8 HEAD)
@@ -507,7 +507,7 @@ build_tar() {
     echo "Compressing images"
     pushd "${ANDROID_BUILD_TOP}/release/tar" > /dev/null
 
-    version=$(grep '^CONFIG_LOCALVERSION=' "${ANDROID_BUILD_TOP}/${CUST_DEFCONFIG}" | cut -d'"' -f2 | sed 's/-'"${MODEL}"'.*//')
+    version=$(grep '^CONFIG_LOCALVERSION=' "${ANDROID_BUILD_TOP}/${CUST_DEFCONFIG}" | cut -d'"' -f2 | sed -E 's/^-?([^ -]+).*/\1/')
     version=${version:1}
     DATE=`date +"%d-%m-%Y_%H-%M-%S"`
     PARSE_LATEST=$(git -C "${ANDROID_BUILD_TOP}" rev-parse --short=8 HEAD)
