@@ -466,7 +466,6 @@ build_zip() {
     pushd "${ANDROID_BUILD_TOP}/external/AnyKernel3" > /dev/null
 
     version=$(grep '^CONFIG_LOCALVERSION=' "${ANDROID_BUILD_TOP}/${CUST_DEFCONFIG}" | cut -d'"' -f2 | sed -E 's/^-?([^ -]+).*/\1/')
-    version=${version:1}
     DATE=`date +"%d-%m-%Y_%H-%M-%S"`
     PARSE_LATEST=$(git -C "${ANDROID_BUILD_TOP}" rev-parse --short=8 HEAD)
 
